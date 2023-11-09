@@ -1,0 +1,16 @@
+version: 3
+
+silent: true
+
+tasks:
+  build:
+    cmds:
+      - go build -o ./bin/api
+  run:
+    deps: [build]
+    cmds:
+      - ./bin/api {{.CLI_ARGS}}
+
+  test:
+    cmds:
+      - go test ./...  -v -count=1
