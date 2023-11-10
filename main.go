@@ -1,24 +1,40 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/ardanlabs/conf/v3"
 	"github.com/gin-gonic/gin"
 	"github.com/mkabdelrahman/hotel-reservation/api"
+	"github.com/mkabdelrahman/hotel-reservation/db"
+	"github.com/mkabdelrahman/hotel-reservation/middleware"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type appConfig struct {
-	Port int `conf:"default:8080,env:APP_PORT"`
+const (
+	dbName   = "hotel-reservation"
+	userColl = "users"
+)
+
+type Config struct {
+	MONGODB_URI string `conf:"default:mongodb://localhost:27017,flag:dburi,env:DB_URI"`
+	Port        int    `conf:"default:8080,env:PORT"`
 }
 
 func main() {
 
 	// CONFIG
-	var cfg appConfig
-	help, err := conf.Parse("APP", &cfg)
+	var cfg Config
+	help, err := conf.Parse("", &cfg)
 	if err != nil {
 		if errors.Is(err, conf.ErrHelpWanted) {
 			fmt.Println(help)
@@ -28,15 +44,66 @@ func main() {
 		return
 	}
 
+	// Mongodb
+
+	// fmt.Println(cfg.MONGODB_URI)
+
+	ctx := context.Background()
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(cfg.MONGODB_URI))
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	userStore := db.NewMongoUserStore(client, dbName, userColl)
+
+	// Handlers Initialization
+
+	userHandler := api.NewUserHandler(userStore)
+
 	// Router
-	r := gin.Default()
+	engine := gin.New()
 
-	v1api := r.Group("/api/v1")
+	engine.Use(middleware.DefaultStructuredLogger())
+	engine.Use(middleware.ErrorHandler())
+	engine.Use(gin.Recovery())
 
-	v1api.GET("/user", api.HandleGetUsers)
-	v1api.GET("/user/:id", api.HandleGetUserById)
+	v1 := engine.Group("/api/v1")
 
-	addr := fmt.Sprintf(":%d", cfg.Port)
-	r.Run(addr)
+	v1.GET("/user/:id", userHandler.HandleGetUserByID)
 
+	server := &http.Server{
+		Addr:    fmt.Sprintf(":%d", cfg.Port),
+		Handler: engine,
+	}
+
+	chanErrors := make(chan error)
+	go func() {
+		chanErrors <- runServer(server)
+	}()
+
+	chanSignals := make(chan os.Signal, 1)
+	signal.Notify(chanSignals, os.Interrupt, syscall.SIGTERM)
+
+	select {
+	case err := <-chanErrors:
+		log.Fatalf("Error while starting server %s", err)
+	case s := <-chanSignals:
+		log.Printf("Shutting down server in few seconds due to %s", s)
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := Close(ctx, server); err != nil {
+			log.Fatal("Server forced to shutdown: ", err)
+		}
+		log.Print("Server exiting gracefully")
+	}
+
+}
+
+func runServer(server *http.Server) error {
+	return server.ListenAndServe()
+}
+
+func Close(ctx context.Context, server *http.Server) error {
+	return server.Shutdown(ctx)
 }
