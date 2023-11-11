@@ -70,9 +70,12 @@ func main() {
 
 	v1 := engine.Group("/api/v1")
 
-	v1.GET("/user/:id", userHandler.HandleGetUserByID)
+	v1.GET("/user/:id", userHandler.HandleGetUser)
+	v1.DELETE("/user/:id", userHandler.HandleDeleteUser)
+
 	v1.GET("/user", userHandler.HandleGetUsers)
 	v1.POST("/user", userHandler.HandlePostUser)
+	v1.PUT("/user/:id", userHandler.HandleUpdateUser)
 
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.Port),

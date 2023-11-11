@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -23,6 +24,34 @@ type CreateUserParams struct {
 	Password  string `json:"password"`
 }
 
+type UpdateUserParams struct {
+	FirstName string `json:"firstName"`
+	LastName  string `json:"lastName"`
+}
+
+func (p *UpdateUserParams) BSON() bson.M {
+
+	b := bson.M{}
+	if len(p.FirstName) > 0 {
+		b["firstName"] = p.FirstName
+	}
+	if len(p.LastName) > 0 {
+		b["lastName"] = p.LastName
+	}
+	return b
+}
+func (params UpdateUserParams) Validate() []error {
+	var errors []error
+
+	if len(params.FirstName) < minFirstNameLength {
+		errors = append(errors, fmt.Errorf("first name length should be at least %d characters", minFirstNameLength))
+	}
+
+	if len(params.LastName) < minLastNameLength {
+		errors = append(errors, fmt.Errorf("last name length should be at least %d characters", minLastNameLength))
+	}
+	return errors
+}
 func (params CreateUserParams) Validate() []error {
 	var errors []error
 

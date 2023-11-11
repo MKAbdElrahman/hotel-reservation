@@ -12,8 +12,8 @@ func (e HTTPError) Error() string {
 	return fmt.Sprintf("description: %s,  metadata: %s", e.Description, e.Metadata)
 }
 
-func NewHTTPError(description, metadata string, statusCode int) *HTTPError {
-	return &HTTPError{
+func NewHTTPError(description, metadata string, statusCode int) HTTPError {
+	return HTTPError{
 		Description: description,
 		Metadata:    metadata,
 		StatusCode:  statusCode,
