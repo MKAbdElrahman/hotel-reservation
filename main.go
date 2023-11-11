@@ -71,6 +71,8 @@ func main() {
 	v1 := engine.Group("/api/v1")
 
 	v1.GET("/user/:id", userHandler.HandleGetUserByID)
+	v1.GET("/user", userHandler.HandleGetUsers)
+	v1.POST("/user", userHandler.HandlePostUser)
 
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.Port),
