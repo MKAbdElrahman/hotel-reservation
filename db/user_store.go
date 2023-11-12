@@ -10,7 +10,12 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+type Dropper interface {
+	Drop(c context.Context) error
+}
+
 type UserStore interface {
+	Dropper
 	GetUserByID(ctx context.Context, ID string) (*types.User, error)
 	GetUsers(context.Context) ([]*types.User, error)
 
@@ -37,7 +42,11 @@ func NewMongoUserStore(client *mongo.Client, dbName string, collName string) *Mo
 		coll:     client.Database(dbName).Collection(collName),
 	}
 }
-func (s MongoUserStore) GetUserByID(ctx context.Context, ID string) (*types.User, error) {
+
+func (s *MongoUserStore) Drop(c context.Context) error {
+	return s.coll.Drop(c)
+}
+func (s *MongoUserStore) GetUserByID(ctx context.Context, ID string) (*types.User, error) {
 	oid, err := primitive.ObjectIDFromHex(ID)
 	if err != nil {
 		return nil, err
@@ -55,7 +64,7 @@ func (s MongoUserStore) GetUserByID(ctx context.Context, ID string) (*types.User
 	return &u, nil
 }
 
-func (s MongoUserStore) DeleteUser(ctx context.Context, ID string) error {
+func (s *MongoUserStore) DeleteUser(ctx context.Context, ID string) error {
 
 	oid, err := primitive.ObjectIDFromHex(ID)
 	if err != nil {
@@ -69,7 +78,7 @@ func (s MongoUserStore) DeleteUser(ctx context.Context, ID string) error {
 	return nil
 }
 
-func (s MongoUserStore) GetUsers(ctx context.Context) ([]*types.User, error) {
+func (s *MongoUserStore) GetUsers(ctx context.Context) ([]*types.User, error) {
 	cur, err := s.coll.Find(ctx, bson.M{})
 	if err != nil {
 		return nil, err
@@ -82,7 +91,7 @@ func (s MongoUserStore) GetUsers(ctx context.Context) ([]*types.User, error) {
 	return users, nil
 }
 
-func (s MongoUserStore) InsertUser(ctx context.Context, user *types.User) (*types.User, error) {
+func (s *MongoUserStore) InsertUser(ctx context.Context, user *types.User) (*types.User, error) {
 
 	res, err := s.coll.InsertOne(ctx, user)
 
