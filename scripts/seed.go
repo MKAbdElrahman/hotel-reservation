@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"strings"
 
 	"github.com/ardanlabs/conf/v3"
 	"github.com/mkabdelrahman/hotel-reservation/business"
@@ -21,13 +20,23 @@ const (
 	roomColl  = "rooms"
 )
 
+var (
+	cfg    Config
+	client *mongo.Client
+
+	hotelStore *db.MongoHotelStore
+
+	roomStore *db.MongoRoomStore
+
+	manager *business.Manager
+)
+
 type Config struct {
 	MONGODB_URI string `conf:"default:mongodb://localhost:27017,flag:dburi,env:DB_URI"`
 }
 
-func main() {
-	// Config
-	var cfg Config
+func Init(ctx context.Context) {
+
 	help, err := conf.Parse("", &cfg)
 	if err != nil {
 		if errors.Is(err, conf.ErrHelpWanted) {
@@ -38,28 +47,36 @@ func main() {
 		return
 	}
 
-	// DB Client
-	ctx := context.Background()
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(cfg.MONGODB_URI))
+	client, err = mongo.Connect(ctx, options.Client().ApplyURI(cfg.MONGODB_URI))
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// SCRIPT
+	hotelStore = db.NewMongoHotelStore(client, dbName, hotelColl)
+	roomStore = db.NewMongoRoomStore(client, dbName, roomColl)
 
-	hotelStore := db.NewMongoHotelStore(client, dbName, hotelColl)
-	roomStore := db.NewMongoRoomStore(client, dbName, roomColl)
-
-
-	// start from empty stores
 	hotelStore.Drop(ctx)
 	roomStore.Drop(ctx)
 
-	manager := business.NewManager(hotelStore, roomStore)
+	manager = business.NewManager(hotelStore, roomStore)
+
+}
+func main() {
+
+	ctx := context.Background()
+
+	Init(ctx)
+
+	seedHotel(ctx, "Dolcica", "Madrid")
+	seedHotel(ctx, "Lapache", "Paris")
+
+}
+
+func seedHotel(ctx context.Context, name string, location string) {
 
 	hotelID, err := manager.AddNewHotel(ctx, types.NewHotelParams{
-		Name:     "Dolco",
-		Location: "Cairo",
+		Name:     name,
+		Location: location,
 	})
 
 	if err != nil {
@@ -107,42 +124,4 @@ func main() {
 			log.Fatal(err)
 		}
 	}
-
-	printHotelWithRooms(manager, ctx, hotelID)
-
-	manager.HotelStore.DeleteHotel(ctx, "655176d2149173452ef0c0e7")
-	manager.HotelStore.DeleteHotel(ctx, "65517809c167ae084600a016")
-
-}
-
-func printHotelWithRooms(manager *business.Manager, ctx context.Context, hotelID string) {
-	// Get hotel information
-	hotel, err := manager.HotelStore.GetHotel(ctx, hotelID)
-	if err != nil {
-		log.Printf("Error fetching hotel %s: %v", hotelID, err)
-		return
-	}
-
-	// Print hotel information
-	fmt.Printf("Hotel: %s (ID: %s, Location: %s)\n", hotel.Name, hotel.ID, hotel.Location)
-
-	// Get rooms for the hotel
-	rooms, err := manager.ListRoomsForHotel(ctx, hotelID)
-	if err != nil {
-		log.Printf("Error fetching rooms for hotel %s: %v", hotelID, err)
-		return
-	}
-
-	// Print rooms for the hotel
-	fmt.Println("Rooms:")
-	for _, room := range rooms {
-		fmt.Printf("  Room %s\n", room.Number)
-		fmt.Printf("    Type: %s\n", room.Type)
-		fmt.Printf("    Floor: %d\n", room.Floor)
-		fmt.Printf("    Price: %.2f\n", room.Price)
-		fmt.Printf("    Occupied: %t\n", room.Occupied)
-		fmt.Printf("    Description: %s\n", room.Description)
-	}
-
-	fmt.Println(strings.Repeat("-", 40)) // Separator line
 }
