@@ -21,6 +21,8 @@ type HotelStore interface {
 	DeleteHotel(ctx context.Context, hotelID string) error
 
 	GetHotels(ctx context.Context) ([]*types.Hotel, error)
+
+	QueryHotels(ctx context.Context, criteria types.QueryCriteria) ([]*types.Hotel, error)
 }
 
 type MongoHotelStore struct {
@@ -138,6 +140,37 @@ func (m *MongoHotelStore) GetHotels(ctx context.Context) ([]*types.Hotel, error)
 	if err := cursor.Err(); err != nil {
 		log.Printf("Cursor error: %v\n", err)
 		return nil, err
+	}
+
+	return hotels, nil
+}
+
+func convertToMongoFilter(criteria types.QueryCriteria) bson.M {
+	filter := bson.M{"rating": criteria.Rating}
+
+	return filter
+}
+
+func (s *MongoHotelStore) QueryHotels(ctx context.Context, criteria types.QueryCriteria) ([]*types.Hotel, error) {
+	// Convert the QueryCriteria to a MongoDB filter
+	filter := convertToMongoFilter(criteria)
+
+	// Use the filter to query MongoDB
+	cursor, err := s.coll.Find(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	// Iterate through the cursor and populate the result
+	var hotels []*types.Hotel
+	for cursor.Next(ctx) {
+		var hotel types.Hotel
+		err := cursor.Decode(&hotel)
+		if err != nil {
+			return nil, err
+		}
+		hotels = append(hotels, &hotel)
 	}
 
 	return hotels, nil

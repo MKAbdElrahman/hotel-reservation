@@ -19,12 +19,9 @@ func NewManager(hotelStore db.HotelStore, roomStore db.RoomStore) *Manager {
 	}
 }
 
-func (m *Manager) AddNewHotel(ctx context.Context, params types.NewHotelParams) (string, error) {
+func (m *Manager) AddNewHotel(ctx context.Context, params types.HotelParams) (string, error) {
 
-	hotel := &types.Hotel{
-		Name:     params.Name,
-		Location: params.Location,
-	}
+	hotel := types.NewHotelFromParams(params)
 	insertedHotel, err := m.HotelStore.InsertHotel(ctx, hotel)
 	if err != nil {
 		return "", err
@@ -42,7 +39,16 @@ func (m *Manager) ListHotels(ctx context.Context) ([]*types.Hotel, error) {
 	return hotels, nil
 }
 
-func (m *Manager) AddNewRoom(ctx context.Context, params types.NewRoomParams, hotelID string) (string, error) {
+func (m *Manager) QueryHotels(ctx context.Context, criteria types.QueryCriteria) ([]*types.Hotel, error) {
+
+	hotels, err := m.HotelStore.QueryHotels(ctx, criteria)
+	if err != nil {
+		return nil, err
+	}
+	return hotels, nil
+}
+
+func (m *Manager) AddNewRoom(ctx context.Context, params types.RoomParams, hotelID string) (string, error) {
 
 	room := &types.Room{
 		HotelID:     hotelID,

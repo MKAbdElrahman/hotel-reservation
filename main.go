@@ -88,6 +88,8 @@ func main() {
 
 	v1.GET("/hotel/:id", hotelHandler.HandleGetHotel)
 
+	v1.GET("/hotel/search", hotelHandler.HandleHotelSearch)
+
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.Port),
 		Handler: engine,

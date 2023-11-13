@@ -67,23 +67,24 @@ func main() {
 
 	Init(ctx)
 
-	seedHotel(ctx, "Dolcica", "Madrid")
-	seedHotel(ctx, "Lapache", "Paris")
+	seedHotel(ctx, "Dolcica", "Madrid", types.Excellent)
+	seedHotel(ctx, "Lapache", "Paris", types.Average)
 
 }
 
-func seedHotel(ctx context.Context, name string, location string) {
+func seedHotel(ctx context.Context, name string, location string, rating types.Rating) {
 
-	hotelID, err := manager.AddNewHotel(ctx, types.NewHotelParams{
+	hotelID, err := manager.AddNewHotel(ctx, types.HotelParams{
 		Name:     name,
 		Location: location,
+		Rating:   rating,
 	})
 
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	rooms := []types.NewRoomParams{
+	rooms := []types.RoomParams{
 		{
 			Number:      "101",
 			Floor:       1,

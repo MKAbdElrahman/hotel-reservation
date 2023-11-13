@@ -15,7 +15,7 @@ type Room struct {
 	Occupied    bool     `json:"occupied" bson:"occupied"`
 }
 
-type NewRoomParams struct {
+type RoomParams struct {
 	Number      string   `json:"number" bson:"number"`
 	Floor       int      `json:"floor" bson:"floor"`
 	Type        RoomType `json:"type" bson:"type"`
@@ -24,10 +24,23 @@ type NewRoomParams struct {
 	Occupied    bool     `json:"occupied" bson:"occupied"`
 }
 
+func NewRoomFromParams(params RoomParams) *Room {
+	room := &Room{
+		Number:      params.Number,
+		Floor:       params.Floor,
+		Type:        params.Type,
+		Description: params.Description,
+		Price:       params.Price,
+		Occupied:    params.Occupied,
+	}
+	return room
+}
+
 type RoomType int
 
 const (
-	StandardRoom RoomType = iota
+	_ RoomType = iota
+	StandardRoom
 	DeluxeRoom
 	SuiteRoom
 )
