@@ -50,6 +50,11 @@ func main() {
 	hotelStore := db.NewMongoHotelStore(client, dbName, hotelColl)
 	roomStore := db.NewMongoRoomStore(client, dbName, roomColl)
 
+
+	// start from empty stores
+	hotelStore.Drop(ctx)
+	roomStore.Drop(ctx)
+
 	manager := business.NewManager(hotelStore, roomStore)
 
 	hotelID, err := manager.AddNewHotel(ctx, types.NewHotelParams{
@@ -103,7 +108,11 @@ func main() {
 		}
 	}
 
-	printHotelWithRooms(manager, ctx, hotelID.Hex())
+	printHotelWithRooms(manager, ctx, hotelID)
+
+	manager.HotelStore.DeleteHotel(ctx, "655176d2149173452ef0c0e7")
+	manager.HotelStore.DeleteHotel(ctx, "65517809c167ae084600a016")
+
 }
 
 func printHotelWithRooms(manager *business.Manager, ctx context.Context, hotelID string) {
@@ -118,7 +127,7 @@ func printHotelWithRooms(manager *business.Manager, ctx context.Context, hotelID
 	fmt.Printf("Hotel: %s (ID: %s, Location: %s)\n", hotel.Name, hotel.ID, hotel.Location)
 
 	// Get rooms for the hotel
-	rooms, err := manager.RoomStore.GetRoomsByHotelID(ctx, hotelID)
+	rooms, err := manager.ListRoomsForHotel(ctx, hotelID)
 	if err != nil {
 		log.Printf("Error fetching rooms for hotel %s: %v", hotelID, err)
 		return

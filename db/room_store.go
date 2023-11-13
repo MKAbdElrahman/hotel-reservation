@@ -36,6 +36,10 @@ func NewMongoRoomStore(client *mongo.Client, dbName string, collName string) *Mo
 	}
 }
 
+func (s *MongoRoomStore) Drop(c context.Context) error {
+	return s.coll.Drop(c)
+}
+
 func (m *MongoRoomStore) InsertRoom(ctx context.Context, room *types.Room) (*types.Room, error) {
 	result, err := m.coll.InsertOne(ctx, room)
 	if err != nil {
@@ -46,7 +50,7 @@ func (m *MongoRoomStore) InsertRoom(ctx context.Context, room *types.Room) (*typ
 	if !ok {
 		return nil, errors.New("could not convert InsertedID to ObjectID")
 	}
-	room.ID = insertedID
+	room.ID = insertedID.Hex()
 	return room, nil
 }
 
@@ -123,17 +127,12 @@ func (m *MongoRoomStore) ListRooms(ctx context.Context) ([]*types.Room, error) {
 	return rooms, nil
 }
 func (r *MongoRoomStore) GetRoomsByHotelID(ctx context.Context, hotelID string) ([]types.Room, error) {
-
-	oid, err := primitive.ObjectIDFromHex(hotelID)
-	if err != nil {
-		return nil, err
-	}
-
-	filter := bson.M{"hotel_id": oid}
+	// Assuming hotelID is a string, not an ObjectID
+	filter := bson.M{"hotel_id": hotelID}
 
 	cursor, err := r.coll.Find(ctx, filter)
 	if err != nil {
-			return nil, err
+		return nil, err
 	}
 	defer cursor.Close(ctx)
 

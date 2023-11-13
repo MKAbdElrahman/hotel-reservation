@@ -39,6 +39,11 @@ func NewMongoHotelStore(client *mongo.Client, dbName string, collName string) *M
 		coll:     client.Database(dbName).Collection(collName),
 	}
 }
+
+func (s *MongoHotelStore) Drop(c context.Context) error {
+	return s.coll.Drop(c)
+}
+
 func (m *MongoHotelStore) InsertHotel(ctx context.Context, hotel *types.Hotel) (*types.Hotel, error) {
 	result, err := m.coll.InsertOne(ctx, hotel)
 	if err != nil {
@@ -49,7 +54,7 @@ func (m *MongoHotelStore) InsertHotel(ctx context.Context, hotel *types.Hotel) (
 	if !ok {
 		return nil, errors.New("could not convert InsertedID to ObjectID")
 	}
-	hotel.ID = insertedID
+	hotel.ID = insertedID.Hex()
 	return hotel, nil
 }
 
@@ -73,15 +78,27 @@ func (m *MongoHotelStore) GetHotel(ctx context.Context, hotelID string) (*types.
 }
 
 func (m *MongoHotelStore) UpdateHotel(ctx context.Context, hotel *types.Hotel) error {
-	oid := hotel.ID
+	oid, err := primitive.ObjectIDFromHex(hotel.ID)
+	if err != nil {
+		return err
+	}
 
 	filter := bson.M{"_id": oid}
-	update := bson.M{"$set": hotel}
-	_, err := m.coll.UpdateOne(ctx, filter, update)
+
+	// Exclude _id field from the update
+	update := bson.M{"$set": bson.M{
+		"name":     hotel.Name,
+		"location": hotel.Location,
+		"rooms":    hotel.Rooms,
+		// Add other fields as needed
+	}}
+
+	_, err = m.coll.UpdateOne(ctx, filter, update)
 	if err != nil {
 		log.Printf("Error updating hotel: %v\n", err)
 		return err
 	}
+
 	return nil
 }
 

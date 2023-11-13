@@ -5,7 +5,6 @@ import (
 
 	"github.com/mkabdelrahman/hotel-reservation/db"
 	"github.com/mkabdelrahman/hotel-reservation/types"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type Manager struct {
@@ -20,7 +19,7 @@ func NewManager(hotelStore db.HotelStore, roomStore db.RoomStore) *Manager {
 	}
 }
 
-func (m *Manager) AddNewHotel(ctx context.Context, params types.NewHotelParams) (primitive.ObjectID, error) {
+func (m *Manager) AddNewHotel(ctx context.Context, params types.NewHotelParams) (string, error) {
 
 	hotel := &types.Hotel{
 		Name:     params.Name,
@@ -28,7 +27,7 @@ func (m *Manager) AddNewHotel(ctx context.Context, params types.NewHotelParams) 
 	}
 	insertedHotel, err := m.HotelStore.InsertHotel(ctx, hotel)
 	if err != nil {
-		return primitive.ObjectID{}, err
+		return "", err
 	}
 
 	return insertedHotel.ID, nil
@@ -43,7 +42,7 @@ func (m *Manager) ListHotels(ctx context.Context) ([]*types.Hotel, error) {
 	return hotels, nil
 }
 
-func (m *Manager) AddNewRoom(ctx context.Context, params types.NewRoomParams, hotelID primitive.ObjectID) (primitive.ObjectID, error) {
+func (m *Manager) AddNewRoom(ctx context.Context, params types.NewRoomParams, hotelID string) (string, error) {
 
 	room := &types.Room{
 		HotelID:     hotelID,
@@ -56,17 +55,17 @@ func (m *Manager) AddNewRoom(ctx context.Context, params types.NewRoomParams, ho
 	}
 	insertedRoom, err := m.RoomStore.InsertRoom(ctx, room)
 	if err != nil {
-		return primitive.ObjectID{}, err
+		return "", err
 	}
 
-	hotel, err := m.HotelStore.GetHotel(ctx, hotelID.Hex())
+	hotel, err := m.HotelStore.GetHotel(ctx, hotelID)
 	if err != nil {
-		return primitive.ObjectID{}, err
+		return "", err
 	}
 	hotel.Rooms = append(hotel.Rooms, insertedRoom.ID)
 	err = m.HotelStore.UpdateHotel(ctx, hotel)
 	if err != nil {
-		return primitive.ObjectID{}, err
+		return "", err
 	}
 	return room.ID, nil
 }
