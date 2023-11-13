@@ -60,3 +60,30 @@ func (h *HotelHandler) HandleHotelSearch(ctx *gin.Context) {
 	// Example response
 	ctx.JSON(http.StatusOK, hotels)
 }
+
+func (h *HotelHandler) HandleGetHotelRooms(ctx *gin.Context) {
+
+	id := ctx.Param("id")
+
+	hotel, err := h.Manager.HotelStore.GetHotel(ctx, id)
+
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	var rooms []*types.Room
+
+	for _, roomID := range hotel.Rooms {
+		room, err := h.Manager.RoomStore.GetRoom(ctx, roomID)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		rooms = append(rooms, room)
+
+	}
+	ctx.JSON(http.StatusOK, rooms)
+
+}
