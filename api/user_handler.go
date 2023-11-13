@@ -1,7 +1,6 @@
 package api
 
 import (
-	"context"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -23,9 +22,7 @@ func (h *UserHandler) HandleGetUser(ctx *gin.Context) {
 
 	id := ctx.Param("id")
 
-	c := context.Background()
-
-	user, err := h.store.GetUserByID(c, id)
+	user, err := h.store.GetUserByID(ctx, id)
 
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

@@ -14,6 +14,7 @@ import (
 	"github.com/ardanlabs/conf/v3"
 	"github.com/gin-gonic/gin"
 	"github.com/mkabdelrahman/hotel-reservation/api"
+	"github.com/mkabdelrahman/hotel-reservation/business"
 	"github.com/mkabdelrahman/hotel-reservation/db"
 	"github.com/mkabdelrahman/hotel-reservation/middleware"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -21,8 +22,10 @@ import (
 )
 
 const (
-	dbName   = "hotel-reservation"
-	userColl = "users"
+	dbName    = "hotel-reservation"
+	userColl  = "users"
+	hotelColl = "hotels"
+	roomColl  = "rooms"
 )
 
 type Config struct {
@@ -56,10 +59,15 @@ func main() {
 	}
 
 	userStore := db.NewMongoUserStore(client, dbName, userColl)
+	hotelStore := db.NewMongoHotelStore(client, dbName, hotelColl)
+	roomStore := db.NewMongoRoomStore(client, dbName, roomColl)
+
+	hotelManager := business.NewManager(hotelStore, roomStore)
 
 	// Handlers Initialization
 
 	userHandler := api.NewUserHandler(userStore)
+	hotelHandler := api.NewHotelHandler(hotelManager)
 
 	// Router
 	engine := gin.New()
@@ -75,6 +83,10 @@ func main() {
 	v1.GET("/user", userHandler.HandleGetUsers)
 	v1.POST("/user", userHandler.HandlePostUser)
 	v1.PUT("/user/:id", userHandler.HandleUpdateUser)
+
+	v1.GET("/hotel", hotelHandler.HandleGetHotels)
+
+	v1.GET("/hotel/:id", hotelHandler.HandleGetHotel)
 
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.Port),
