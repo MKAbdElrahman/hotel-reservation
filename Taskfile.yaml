@@ -9,6 +9,7 @@ tasks:
     cmds:
       - docker run --name mongo   -p 27017:27017  -d mongodb/mongodb-community-server:latest
 
+  seed: go run scripts/seed.go
   build:
     cmds:
       - go build -o ./bin/api

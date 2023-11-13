@@ -65,7 +65,6 @@ func main() {
 	engine := gin.New()
 
 	engine.Use(middleware.DefaultStructuredLogger())
-	engine.Use(middleware.ErrorHandler())
 	engine.Use(gin.Recovery())
 
 	v1 := engine.Group("/api/v1")
