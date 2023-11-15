@@ -82,7 +82,7 @@ func (h *UserHandler) HandleDeleteUser(ctx *gin.Context) {
 }
 
 func (h *UserHandler) HandlePostUser(ctx *gin.Context) {
-	var params types.CreateUserParams
+	var params types.UserParams
 
 	err := ctx.ShouldBindJSON(&params)
 
@@ -98,7 +98,7 @@ func (h *UserHandler) HandlePostUser(ctx *gin.Context) {
 		}
 		return
 	}
-	user, err := types.CreateNewUserFromParams(params)
+	user, err := types.NewUserFromParams(params)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

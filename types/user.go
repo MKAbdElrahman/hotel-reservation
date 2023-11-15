@@ -17,11 +17,33 @@ const (
 	minPasswordLength  = 7
 )
 
-type CreateUserParams struct {
+type User struct {
+	ID                primitive.ObjectID `bson:"_id,omitempty" json:"id,omitempty"`
+	FirstName         string             `bson:"firstName" json:"firstName"`
+	LastName          string             `bson:"lastName" json:"lastName"`
+	Email             string             `bson:"email" json:"email"`
+	EncryptedPassword string             `bson:"EncryptedPassword" json:"-"`
+}
+
+type UserParams struct {
 	FirstName string `json:"firstName"`
 	LastName  string `json:"lastName"`
 	Email     string `json:"email"`
 	Password  string `json:"password"`
+}
+
+func NewUserFromParams(params UserParams) (*User, error) {
+	encryptedPassword, err := bcrypt.GenerateFromPassword([]byte(params.Password), bcryptCost)
+	if err != nil {
+		return nil, err
+	}
+
+	return &User{
+		FirstName:         params.FirstName,
+		LastName:          params.LastName,
+		Email:             params.Email,
+		EncryptedPassword: string(encryptedPassword),
+	}, nil
 }
 
 type UpdateUserParams struct {
@@ -52,7 +74,7 @@ func (params UpdateUserParams) Validate() []error {
 	}
 	return errors
 }
-func (params CreateUserParams) Validate() []error {
+func (params UserParams) Validate() []error {
 	var errors []error
 
 	if len(params.FirstName) < minFirstNameLength {
@@ -77,26 +99,4 @@ func (params CreateUserParams) Validate() []error {
 func isEmailValid(e string) bool {
 	emailRegex := regexp.MustCompile(`^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,4}$`)
 	return emailRegex.MatchString(e)
-}
-
-func CreateNewUserFromParams(params CreateUserParams) (*User, error) {
-	encryptedPassword, err := bcrypt.GenerateFromPassword([]byte(params.Password), bcryptCost)
-	if err != nil {
-		return nil, err
-	}
-
-	return &User{
-		FirstName:         params.FirstName,
-		LastName:          params.LastName,
-		Email:             params.Email,
-		EncryptedPassword: string(encryptedPassword),
-	}, nil
-}
-
-type User struct {
-	ID                primitive.ObjectID `bson:"_id,omitempty" json:"id,omitempty"`
-	FirstName         string             `bson:"firstName" json:"firstName"`
-	LastName          string             `bson:"lastName" json:"lastName"`
-	Email             string             `bson:"email" json:"email"`
-	EncryptedPassword string             `bson:"EncryptedPassword" json:"-"`
 }

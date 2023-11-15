@@ -2,6 +2,7 @@ package business
 
 import (
 	"context"
+	"errors"
 
 	"github.com/mkabdelrahman/hotel-reservation/db"
 	"github.com/mkabdelrahman/hotel-reservation/types"
@@ -10,10 +11,12 @@ import (
 type Manager struct {
 	HotelStore db.HotelStore
 	RoomStore  db.RoomStore
+	UserStore  db.UserStore
 }
 
-func NewManager(hotelStore db.HotelStore, roomStore db.RoomStore) *Manager {
+func NewManager(userStore db.UserStore, hotelStore db.HotelStore, roomStore db.RoomStore) *Manager {
 	return &Manager{
+		UserStore:  userStore,
 		HotelStore: hotelStore,
 		RoomStore:  roomStore,
 	}
@@ -28,6 +31,24 @@ func (m *Manager) AddNewHotel(ctx context.Context, params types.HotelParams) (st
 	}
 
 	return insertedHotel.ID, nil
+}
+
+func (m *Manager) AddNewUser(ctx context.Context, params types.UserParams) (string, error) {
+	user, err := types.NewUserFromParams(params)
+	if err != nil {
+		return "", err
+	}
+
+	insertedUser, err := m.UserStore.InsertUser(ctx, user)
+	if err != nil {
+		return "", err
+	}
+
+	if insertedUser == nil {
+		return "", errors.New("insertedUser is nil")
+	}
+
+	return insertedUser.ID.Hex(), nil
 }
 
 func (m *Manager) ListHotels(ctx context.Context) ([]*types.Hotel, error) {
