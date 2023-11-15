@@ -17,6 +17,9 @@ type Dropper interface {
 type UserStore interface {
 	Dropper
 	GetUserByID(ctx context.Context, ID string) (*types.User, error)
+
+	GetUserByEmail(ctx context.Context, email string) (*types.User, error)
+
 	GetUsers(context.Context) ([]*types.User, error)
 
 	InsertUser(ctx context.Context, user *types.User) (*types.User, error)
@@ -64,6 +67,20 @@ func (s *MongoUserStore) GetUserByID(ctx context.Context, ID string) (*types.Use
 	return &u, nil
 }
 
+func (s *MongoUserStore) GetUserByEmail(ctx context.Context, email string) (*types.User, error) {
+
+	var u types.User
+	err := s.coll.FindOne(ctx, bson.M{"email": email}).Decode(&u)
+
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, errors.New("email not found")
+		}
+		return nil, err
+	}
+
+	return &u, nil
+}
 func (s *MongoUserStore) DeleteUser(ctx context.Context, ID string) error {
 
 	oid, err := primitive.ObjectIDFromHex(ID)
