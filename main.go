@@ -78,7 +78,7 @@ func main() {
 
 	engine.POST("/api/auth", authHandler.HandleAuthenticate)
 
-	v1 := engine.Group("/api/v1")
+	v1 := engine.Group("/api/v1", middleware.AuthMiddleware())
 
 	v1.GET("/user/:id", userHandler.HandleGetUser)
 	v1.DELETE("/user/:id", userHandler.HandleDeleteUser)

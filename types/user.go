@@ -100,3 +100,10 @@ func isEmailValid(e string) bool {
 	emailRegex := regexp.MustCompile(`^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,4}$`)
 	return emailRegex.MatchString(e)
 }
+
+func IsValidPassword(encryptedPassword, password string) (bool, error) {
+	if err := bcrypt.CompareHashAndPassword([]byte(encryptedPassword), []byte(password)); err != nil {
+		return false, err
+	}
+	return true, nil
+}
