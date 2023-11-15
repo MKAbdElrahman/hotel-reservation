@@ -62,18 +62,21 @@ func main() {
 	hotelStore := db.NewMongoHotelStore(client, dbName, hotelColl)
 	roomStore := db.NewMongoRoomStore(client, dbName, roomColl)
 
-	hotelManager := business.NewManager(hotelStore, roomStore)
+	hotelManager := business.NewManager(userStore, hotelStore, roomStore)
 
 	// Handlers Initialization
 
+	authHandler := api.NewAuthHandler(userStore)
 	userHandler := api.NewUserHandler(userStore)
 	hotelHandler := api.NewHotelHandler(hotelManager)
 
 	// Router
 	engine := gin.New()
 
-	engine.Use(middleware.DefaultStructuredLogger())
+	engine.Use(middleware.Logger)
 	engine.Use(gin.Recovery())
+
+	engine.POST("/api/auth", authHandler.HandleAuthenticate)
 
 	v1 := engine.Group("/api/v1")
 
