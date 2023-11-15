@@ -18,6 +18,7 @@ const (
 	dbName    = "hotel-reservation"
 	hotelColl = "hotels"
 	roomColl  = "rooms"
+	userColl  = "users"
 )
 
 var (
@@ -27,6 +28,8 @@ var (
 	hotelStore *db.MongoHotelStore
 
 	roomStore *db.MongoRoomStore
+
+	userStore *db.MongoUserStore
 
 	manager *business.Manager
 )
@@ -54,11 +57,13 @@ func Init(ctx context.Context) {
 
 	hotelStore = db.NewMongoHotelStore(client, dbName, hotelColl)
 	roomStore = db.NewMongoRoomStore(client, dbName, roomColl)
+	userStore = db.NewMongoUserStore(client, dbName, userColl)
 
 	hotelStore.Drop(ctx)
 	roomStore.Drop(ctx)
+	userStore.Drop(ctx)
 
-	manager = business.NewManager(hotelStore, roomStore)
+	manager = business.NewManager(userStore, hotelStore, roomStore)
 
 }
 func main() {
@@ -66,6 +71,14 @@ func main() {
 	ctx := context.Background()
 
 	Init(ctx)
+
+	users := []types.UserParams{
+		{FirstName: "mohamed", LastName: "Kamal", Email: "mohamed@example.com", Password: "password1"},
+		{FirstName: "Ali", LastName: "Ibrahim", Email: "ali@example.com", Password: "password2"},
+	}
+
+	// Seed users
+	seedUsers(ctx, users)
 
 	seedHotel(ctx, "Dolcica", "Madrid", types.Excellent)
 	seedHotel(ctx, "Lapache", "Paris", types.Average)
@@ -123,6 +136,17 @@ func seedHotel(ctx context.Context, name string, location string, rating types.R
 		_, err := manager.AddNewRoom(ctx, room, hotelID)
 		if err != nil {
 			log.Fatal(err)
+		}
+	}
+}
+
+func seedUsers(ctx context.Context, users []types.UserParams) {
+	for _, userParams := range users {
+		userID, err := manager.AddNewUser(ctx, userParams)
+		if err != nil {
+			log.Printf("Error seeding user: %v", err)
+		} else {
+			log.Printf("User seeded successfully. UserID: %s\n", userID)
 		}
 	}
 }
