@@ -20,17 +20,7 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		// Parse the token
-		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-			// Check the signing method
-			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-			}
-
-			// Return the secret key
-			return []byte(os.Getenv("JWT_SECRET")), nil
-		})
-
+		token, err := parseToken(tokenString)
 		if err != nil || !token.Valid {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 			c.Abort()
@@ -43,11 +33,7 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		// Extract claims
 		claims, ok := token.Claims.(jwt.MapClaims)
-
-		// add a function for cheking its not expired
-
 		if !ok {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 			c.Abort()
@@ -68,4 +54,16 @@ func isTokenNotExpired(token *jwt.Token) bool {
 		return time.Now().Unix() < expirationTime
 	}
 	return false
+}
+
+func parseToken(tokenString string) (*jwt.Token, error) {
+	return jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		// Check the signing method
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+
+		// Return the secret key
+		return []byte(os.Getenv("JWT_SECRET")), nil
+	})
 }
