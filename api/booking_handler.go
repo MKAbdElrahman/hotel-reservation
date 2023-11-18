@@ -41,6 +41,12 @@ func (h *BookingHandler) HandlePostBooking(ctx *gin.Context) {
 	}
 	booking.UserID = userID.(string)
 
+	err = booking.Validate()
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
 	insertedBooking, err := h.Manager.BookingStore.InsertBooking(ctx, booking)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

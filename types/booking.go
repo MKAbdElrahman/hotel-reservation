@@ -1,6 +1,7 @@
 package types
 
 import (
+	"errors"
 	"time"
 )
 
@@ -19,8 +20,34 @@ type NewBookingParams struct {
 	TillDate time.Time `json:"till_date" bson:"till_date,omitempty"`
 }
 
-func NewBookingFromParams(params NewBookingParams) *Booking {
+func (params Booking) Validate() error {
+	if params.UserID == "" {
+		return errors.New("UserID is required")
+	}
 
+	if params.RoomID == "" {
+		return errors.New("RoomID is required")
+	}
+
+	if params.FromDate.IsZero() {
+		return errors.New("FromDate is required and must be a valid time")
+	}
+
+	if params.TillDate.IsZero() {
+		return errors.New("TillDate is required and must be a valid time")
+	}
+
+	if params.TillDate.Before(params.FromDate) {
+		return errors.New("TillDate must be after FromDate")
+	}
+
+	now := time.Now()
+	if params.FromDate.Before(now) {
+		return errors.New("FromDate must be in the future")
+	}
+	return nil
+}
+func NewBookingFromParams(params NewBookingParams) *Booking {
 	return &Booking{
 		RoomID:   params.RoomID,
 		FromDate: params.FromDate,

@@ -38,6 +38,7 @@ func (m *Manager) AddNewHotel(ctx context.Context, params types.HotelParams) (st
 func (m *Manager) AddNewBooking(ctx context.Context, params types.NewBookingParams) (string, error) {
 
 	booking := types.NewBookingFromParams(params)
+
 	insertedBooking, err := m.BookingStore.InsertBooking(ctx, booking)
 	if err != nil {
 		return "", err
