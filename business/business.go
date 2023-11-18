@@ -3,6 +3,7 @@ package business
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/mkabdelrahman/hotel-reservation/db"
 	"github.com/mkabdelrahman/hotel-reservation/types"
@@ -35,9 +36,7 @@ func (m *Manager) AddNewHotel(ctx context.Context, params types.HotelParams) (st
 	return insertedHotel.ID, nil
 }
 
-func (m *Manager) AddNewBooking(ctx context.Context, params types.NewBookingParams) (string, error) {
-
-	booking := types.NewBookingFromParams(params)
+func (m *Manager) AddNewBooking(ctx context.Context, booking *types.Booking) (string, error) {
 
 	// Check if the room is available for the given time range
 	existingBooking, err := m.BookingStore.GetBookingByRoomAndTimeRange(ctx, booking.RoomID, booking.FromDate, booking.TillDate)
@@ -49,12 +48,24 @@ func (m *Manager) AddNewBooking(ctx context.Context, params types.NewBookingPara
 		return "", errors.New("room is already booked for the specified time range")
 	}
 
+	fmt.Printf("%+v", booking)
+
 	insertedBooking, err := m.BookingStore.InsertBooking(ctx, booking)
+
 	if err != nil {
 		return "", err
 	}
 
 	return insertedBooking.ID, nil
+}
+
+func (m *Manager) ListBookings(ctx context.Context) ([]*types.Booking, error) {
+
+	bookings, err := m.BookingStore.GetBookings(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return bookings, nil
 }
 
 func (m *Manager) AddNewUser(ctx context.Context, params types.UserParams) (string, error) {

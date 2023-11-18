@@ -7,17 +7,17 @@ import (
 
 type Booking struct {
 	ID       string    `json:"id" bson:"_id,omitempty"`
-	UserID   string    `json:"user_id" bson:"user_id,omitempty"`
-	RoomID   string    `json:"room_id" bson:"room_id,omitempty"`
-	FromDate time.Time `json:"from_date" bson:"from_date,omitempty"`
-	TillDate time.Time `json:"till_date" bson:"till_date,omitempty"`
+	UserID   string    `json:"user_id" bson:"user_id"`
+	RoomID   string    `json:"room_id" bson:"room_id"`
+	FromDate time.Time `json:"from_date" bson:"from_date"`
+	TillDate time.Time `json:"till_date" bson:"till_date"`
 }
 
 type NewBookingParams struct {
-	UserID   string    `json:"user_id" bson:"user_id,omitempty"`
-	RoomID   string    `json:"room_id" bson:"room_id,omitempty"`
-	FromDate time.Time `json:"from_date" bson:"from_date,omitempty"`
-	TillDate time.Time `json:"till_date" bson:"till_date,omitempty"`
+	UserID   string    `json:"user_id" bson:"user_id"`
+	RoomID   string    `json:"room_id" bson:"room_id"`
+	FromDate time.Time `json:"from_date" bson:"from_date"`
+	TillDate time.Time `json:"till_date" bson:"till_date"`
 }
 
 func (params Booking) Validate() error {

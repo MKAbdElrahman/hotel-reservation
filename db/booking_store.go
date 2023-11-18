@@ -19,7 +19,7 @@ type BookingStore interface {
 
 	GetBookingByRoomAndTimeRange(ctx context.Context, roomID string, fromDate, tillDate time.Time) (*types.Booking, error)
 
-	// GetBookings(ctx context.Context) ([]*types.Booking, error)
+	GetBookings(ctx context.Context) ([]*types.Booking, error)
 
 	// UpdateBooking(ctx context.Context, booking *types.Booking) error
 
@@ -101,4 +101,30 @@ func (m *MongoBookingStore) GetBookingByRoomAndTimeRange(ctx context.Context, ro
 
 	// A booking exists for the specified time range, indicating the room is already booked
 	return &existingBooking, nil
+}
+
+func (m *MongoBookingStore) GetBookings(ctx context.Context) ([]*types.Booking, error) {
+	cursor, err := m.coll.Find(ctx, bson.M{})
+	if err != nil {
+		log.Printf("Error listing bookings: %v\n", err)
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var bookings []*types.Booking
+	for cursor.Next(ctx) {
+		var booking types.Booking
+		if err := cursor.Decode(&booking); err != nil {
+			log.Printf("Error decoding booking: %v\n", err)
+			return nil, err
+		}
+		bookings = append(bookings, &booking)
+	}
+
+	if err := cursor.Err(); err != nil {
+		log.Printf("Cursor error: %v\n", err)
+		return nil, err
+	}
+
+	return bookings, nil
 }

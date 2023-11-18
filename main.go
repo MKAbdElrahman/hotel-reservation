@@ -105,6 +105,8 @@ func main() {
 	// booking
 
 	v1.GET("/booking/:id", bookingHandler.HandleGetBooking)
+	v1.GET("/booking", bookingHandler.HandleGetBookings)
+
 	v1.POST("/booking", bookingHandler.HandlePostBooking)
 
 	server := &http.Server{
