@@ -39,6 +39,16 @@ func (m *Manager) AddNewBooking(ctx context.Context, params types.NewBookingPara
 
 	booking := types.NewBookingFromParams(params)
 
+	// Check if the room is available for the given time range
+	existingBooking, err := m.BookingStore.GetBookingByRoomAndTimeRange(ctx, booking.RoomID, booking.FromDate, booking.TillDate)
+
+	if err != nil {
+		return "", err
+	}
+	if existingBooking != nil {
+		return "", errors.New("room is already booked for the specified time range")
+	}
+
 	insertedBooking, err := m.BookingStore.InsertBooking(ctx, booking)
 	if err != nil {
 		return "", err

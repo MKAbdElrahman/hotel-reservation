@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"log"
+	"time"
 
 	"github.com/mkabdelrahman/hotel-reservation/types"
 	"go.mongodb.org/mongo-driver/bson"
@@ -15,6 +16,8 @@ type BookingStore interface {
 	InsertBooking(ctx context.Context, hotel *types.Booking) (*types.Booking, error)
 
 	GetBookingByID(ctx context.Context, bookingID string) (*types.Booking, error)
+
+	GetBookingByRoomAndTimeRange(ctx context.Context, roomID string, fromDate, tillDate time.Time) (*types.Booking, error)
 
 	// GetBookings(ctx context.Context) ([]*types.Booking, error)
 
@@ -76,4 +79,26 @@ func (s *MongoBookingStore) GetBookingByID(ctx context.Context, ID string) (*typ
 		return nil, err
 	}
 	return &b, nil
+}
+
+func (m *MongoBookingStore) GetBookingByRoomAndTimeRange(ctx context.Context, roomID string, fromDate, tillDate time.Time) (*types.Booking, error) {
+	// Check if the room is booked for the specified time range
+	filter := bson.M{
+		"room_id":   roomID,
+		"from_date": bson.M{"$lt": tillDate},
+		"till_date": bson.M{"$gt": fromDate},
+	}
+
+	var existingBooking types.Booking
+	err := m.coll.FindOne(ctx, filter).Decode(&existingBooking)
+	if err == mongo.ErrNoDocuments {
+		// No booking found for the specified time range, the room is available
+		return nil, nil
+	} else if err != nil {
+		// Handle other errors
+		return nil, err
+	}
+
+	// A booking exists for the specified time range, indicating the room is already booked
+	return &existingBooking, nil
 }

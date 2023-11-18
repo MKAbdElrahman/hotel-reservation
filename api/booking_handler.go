@@ -47,7 +47,7 @@ func (h *BookingHandler) HandlePostBooking(ctx *gin.Context) {
 		return
 	}
 
-	insertedBooking, err := h.Manager.BookingStore.InsertBooking(ctx, booking)
+	insertedBooking, err := h.Manager.AddNewBooking(ctx, params)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 
