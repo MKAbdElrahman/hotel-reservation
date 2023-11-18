@@ -80,12 +80,22 @@ func main() {
 
 	engine.Use(middleware.Logger)
 	engine.Use(gin.Recovery())
+	engine.Use(middleware.AuthMiddleware())
+
+	v1 := engine.Group("/api/v1")
+
+	adminRoutes := engine.Group("/admin", middleware.AdminOnlyMiddleware(hotelManager))
+
+	{
+		adminRoutes.GET("/dashboard", func(c *gin.Context) {
+			// Your admin-only route logic goes here
+			c.JSON(200, gin.H{"message": "Admin dashboard"})
+		})
+	}
 
 	engine.POST("/api/auth", authHandler.HandleAuthenticate)
 
-	v1 := engine.Group("/api/v1", middleware.AuthMiddleware())
-
-	// user
+	// users
 	v1.GET("/user/:id", userHandler.HandleGetUser)
 	v1.DELETE("/user/:id", userHandler.HandleDeleteUser)
 
