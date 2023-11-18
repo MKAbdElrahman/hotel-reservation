@@ -10,7 +10,6 @@ import (
 
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Get the token from the Authorization header
 		tokenString := c.GetHeader("Authorization")
 		if tokenString == "" {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
@@ -37,11 +36,7 @@ func AuthMiddleware() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-
-		// Set the user ID in the context for later use
 		c.Set("userID", claims["id"])
-
-		// Continue to the next handler
 		c.Next()
 	}
 }
