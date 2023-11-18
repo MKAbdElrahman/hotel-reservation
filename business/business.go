@@ -9,16 +9,18 @@ import (
 )
 
 type Manager struct {
-	HotelStore db.HotelStore
-	RoomStore  db.RoomStore
-	UserStore  db.UserStore
+	HotelStore   db.HotelStore
+	RoomStore    db.RoomStore
+	UserStore    db.UserStore
+	BookingStore db.BookingStore
 }
 
-func NewManager(userStore db.UserStore, hotelStore db.HotelStore, roomStore db.RoomStore) *Manager {
+func NewManager(userStore db.UserStore, hotelStore db.HotelStore, roomStore db.RoomStore, bookingStore db.BookingStore) *Manager {
 	return &Manager{
-		UserStore:  userStore,
-		HotelStore: hotelStore,
-		RoomStore:  roomStore,
+		UserStore:    userStore,
+		HotelStore:   hotelStore,
+		RoomStore:    roomStore,
+		BookingStore: bookingStore,
 	}
 }
 
@@ -31,6 +33,17 @@ func (m *Manager) AddNewHotel(ctx context.Context, params types.HotelParams) (st
 	}
 
 	return insertedHotel.ID, nil
+}
+
+func (m *Manager) AddNewBooking(ctx context.Context, params types.NewBookingParams) (string, error) {
+
+	booking := types.NewBookingFromParams(params)
+	insertedBooking, err := m.BookingStore.InsertBooking(ctx, booking)
+	if err != nil {
+		return "", err
+	}
+
+	return insertedBooking.ID, nil
 }
 
 func (m *Manager) AddNewUser(ctx context.Context, params types.UserParams) (string, error) {

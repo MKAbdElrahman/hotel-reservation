@@ -15,10 +15,11 @@ import (
 )
 
 const (
-	dbName    = "hotel-reservation"
-	hotelColl = "hotels"
-	roomColl  = "rooms"
-	userColl  = "users"
+	dbName      = "hotel-reservation"
+	hotelColl   = "hotels"
+	roomColl    = "rooms"
+	userColl    = "users"
+	bookingColl = "bookings"
 )
 
 var (
@@ -30,6 +31,8 @@ var (
 	roomStore *db.MongoRoomStore
 
 	userStore *db.MongoUserStore
+
+	bookingStore *db.MongoBookingStore
 
 	manager *business.Manager
 )
@@ -58,12 +61,14 @@ func Init(ctx context.Context) {
 	hotelStore = db.NewMongoHotelStore(client, dbName, hotelColl)
 	roomStore = db.NewMongoRoomStore(client, dbName, roomColl)
 	userStore = db.NewMongoUserStore(client, dbName, userColl)
+	bookingStore = db.NewMongoBookingStore(client, dbName, bookingColl)
 
 	hotelStore.Drop(ctx)
 	roomStore.Drop(ctx)
 	userStore.Drop(ctx)
+	bookingStore.Drop(ctx)
 
-	manager = business.NewManager(userStore, hotelStore, roomStore)
+	manager = business.NewManager(userStore, hotelStore, roomStore, bookingStore)
 
 }
 func main() {
@@ -79,7 +84,6 @@ func main() {
 
 	// Seed users
 	seedUsers(ctx, users)
-
 	seedHotel(ctx, "Dolcica", "Madrid", types.Excellent)
 	seedHotel(ctx, "Lapache", "Paris", types.Average)
 

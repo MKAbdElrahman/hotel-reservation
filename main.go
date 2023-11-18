@@ -22,16 +22,19 @@ import (
 )
 
 const (
-	dbName    = "hotel-reservation"
-	userColl  = "users"
-	hotelColl = "hotels"
-	roomColl  = "rooms"
+	dbName      = "hotel-reservation"
+	userColl    = "users"
+	hotelColl   = "hotels"
+	roomColl    = "rooms"
+	bookingColl = "bookings"
 )
 
 type Config struct {
 	MONGODB_URI string `conf:"default:mongodb://localhost:27017,flag:dburi,env:DB_URI"`
 	Port        int    `conf:"default:8080,env:PORT"`
 }
+
+const serverShutdownTimeout = 5 * time.Second
 
 func main() {
 
@@ -61,14 +64,16 @@ func main() {
 	userStore := db.NewMongoUserStore(client, dbName, userColl)
 	hotelStore := db.NewMongoHotelStore(client, dbName, hotelColl)
 	roomStore := db.NewMongoRoomStore(client, dbName, roomColl)
+	bookingStore := db.NewMongoBookingStore(client, dbName, bookingColl)
 
-	hotelManager := business.NewManager(userStore, hotelStore, roomStore)
+	hotelManager := business.NewManager(userStore, hotelStore, roomStore, bookingStore)
 
 	// Handlers Initialization
 
 	authHandler := api.NewAuthHandler(userStore)
 	userHandler := api.NewUserHandler(userStore)
 	hotelHandler := api.NewHotelHandler(hotelManager)
+	bookingHandler := api.NewBookingHandler(hotelManager)
 
 	// Router
 	engine := gin.New()
@@ -80,6 +85,7 @@ func main() {
 
 	v1 := engine.Group("/api/v1", middleware.AuthMiddleware())
 
+	// user
 	v1.GET("/user/:id", userHandler.HandleGetUser)
 	v1.DELETE("/user/:id", userHandler.HandleDeleteUser)
 
@@ -87,6 +93,7 @@ func main() {
 	v1.POST("/user", userHandler.HandlePostUser)
 	v1.PUT("/user/:id", userHandler.HandleUpdateUser)
 
+	// hotel
 	v1.GET("/hotel", hotelHandler.HandleGetHotels)
 
 	v1.GET("/hotel/:id", hotelHandler.HandleGetHotel)
@@ -94,6 +101,11 @@ func main() {
 	v1.GET("/hotel/:id/rooms", hotelHandler.HandleGetHotelRooms)
 
 	v1.GET("/hotel/search", hotelHandler.HandleHotelSearch)
+
+	// booking
+
+	v1.GET("/booking/:id", bookingHandler.HandleGetBooking)
+	v1.POST("/booking", bookingHandler.HandlePostBooking)
 
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.Port),
@@ -113,7 +125,7 @@ func main() {
 		log.Fatalf("Error while starting server %s", err)
 	case s := <-chanSignals:
 		log.Printf("Shutting down server in few seconds due to %s", s)
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), serverShutdownTimeout)
 		defer cancel()
 		if err := Close(ctx, server); err != nil {
 			log.Fatal("Server forced to shutdown: ", err)
