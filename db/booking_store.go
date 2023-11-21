@@ -21,7 +21,7 @@ type BookingStore interface {
 
 	GetBookings(ctx context.Context) ([]*types.Booking, error)
 
-	UpdateBookingStatus(ctx context.Context, booking *types.Booking) error
+	UpdateBooking(ctx context.Context, booking *types.Booking) error
 
 	// DeleteBooking(ctx context.Context, bookigID string) error
 
@@ -129,7 +129,7 @@ func (m *MongoBookingStore) GetBookings(ctx context.Context) ([]*types.Booking, 
 	return bookings, nil
 }
 
-func (m *MongoBookingStore) UpdateBookingStatus(ctx context.Context, booking *types.Booking) error {
+func (m *MongoBookingStore) UpdateBooking(ctx context.Context, booking *types.Booking) error {
 	oid, err := primitive.ObjectIDFromHex(booking.ID)
 	if err != nil {
 		return err
@@ -139,6 +139,10 @@ func (m *MongoBookingStore) UpdateBookingStatus(ctx context.Context, booking *ty
 
 	update := bson.M{
 		"$set": bson.M{
+			"user_id":        booking.UserID,
+			"room_id":        booking.RoomID,
+			"from_date":      booking.FromDate,
+			"till_date":      booking.TillDate,
 			"booking_status": booking.BookingStatus,
 		},
 	}

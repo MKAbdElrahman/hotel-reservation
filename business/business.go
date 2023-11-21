@@ -3,7 +3,6 @@ package business
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	"github.com/mkabdelrahman/hotel-reservation/db"
 	"github.com/mkabdelrahman/hotel-reservation/types"
@@ -25,77 +24,7 @@ func NewManager(userStore db.UserStore, hotelStore db.HotelStore, roomStore db.R
 	}
 }
 
-func (m *Manager) AddNewHotel(ctx context.Context, params types.HotelParams) (string, error) {
 
-	hotel := types.NewHotelFromParams(params)
-	insertedHotel, err := m.HotelStore.InsertHotel(ctx, hotel)
-	if err != nil {
-		return "", err
-	}
-
-	return insertedHotel.ID, nil
-}
-
-func (m *Manager) AddNewBooking(ctx context.Context, booking *types.Booking) (string, error) {
-
-	// Check if the room is available for the given time range
-	existingBooking, err := m.BookingStore.GetBookingByRoomAndTimeRange(ctx, booking.RoomID, booking.FromDate, booking.TillDate)
-
-	if err != nil {
-		return "", err
-	}
-	if existingBooking != nil {
-		return "", errors.New("room is already booked for the specified time range")
-	}
-
-	fmt.Printf("%+v", booking)
-
-	insertedBooking, err := m.BookingStore.InsertBooking(ctx, booking)
-
-	if err != nil {
-		return "", err
-	}
-
-	return insertedBooking.ID, nil
-}
-
-func (m *Manager) ListBookings(ctx context.Context) ([]*types.Booking, error) {
-
-	bookings, err := m.BookingStore.GetBookings(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return bookings, nil
-}
-
-// Add this method to the Manager struct
-func (m *Manager) UpdateBookingStatus(ctx context.Context, bookingID string) error {
-	// Retrieve the booking to check if it exists
-	booking, err := m.BookingStore.GetBookingByID(ctx, bookingID)
-	if err != nil {
-		return err
-	}
-
-	if booking == nil {
-		return errors.New("booking not found")
-	}
-
-	// Check if the booking is already canceled
-	if booking.BookingStatus == types.StatusCanceled {
-		return errors.New("booking is already canceled")
-	}
-
-	// Set the status to canceled
-	booking.BookingStatus = types.StatusCanceled
-
-	// Update the booking in the database
-	err = m.BookingStore.UpdateBookingStatus(ctx, booking)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
 
 func (m *Manager) AddNewUser(ctx context.Context, params types.UserParams) (string, error) {
 	user, err := types.NewUserFromParams(params)
@@ -115,51 +44,3 @@ func (m *Manager) AddNewUser(ctx context.Context, params types.UserParams) (stri
 	return insertedUser.ID.Hex(), nil
 }
 
-func (m *Manager) ListHotels(ctx context.Context) ([]*types.Hotel, error) {
-
-	hotels, err := m.HotelStore.GetHotels(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return hotels, nil
-}
-
-func (m *Manager) QueryHotels(ctx context.Context, criteria types.QueryCriteria) ([]*types.Hotel, error) {
-
-	hotels, err := m.HotelStore.QueryHotels(ctx, criteria)
-	if err != nil {
-		return nil, err
-	}
-	return hotels, nil
-}
-
-func (m *Manager) AddNewRoom(ctx context.Context, params types.RoomParams, hotelID string) (string, error) {
-
-	room := &types.Room{
-		HotelID:     hotelID,
-		Number:      params.Number,
-		Floor:       params.Floor,
-		Type:        params.Type,
-		Description: params.Description,
-		Price:       params.Price,
-		Occupied:    params.Occupied,
-	}
-	insertedRoom, err := m.RoomStore.InsertRoom(ctx, room)
-	if err != nil {
-		return "", err
-	}
-
-	hotel, err := m.HotelStore.GetHotel(ctx, hotelID)
-	if err != nil {
-		return "", err
-	}
-	hotel.Rooms = append(hotel.Rooms, insertedRoom.ID)
-	err = m.HotelStore.UpdateHotel(ctx, hotel)
-	if err != nil {
-		return "", err
-	}
-	return room.ID, nil
-}
-func (m *Manager) ListRoomsForHotel(ctx context.Context, hotelID string) ([]types.Room, error) {
-	return m.RoomStore.GetRoomsByHotelID(ctx, hotelID)
-}

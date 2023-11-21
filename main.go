@@ -118,7 +118,7 @@ func main() {
 	v1.GET("/booking", bookingHandler.HandleGetBookings)
 	v1.POST("/booking", bookingHandler.HandlePostBooking)
 	// used to change the booking status
-	v1.PATCH("/booking/:id", bookingHandler.HandleUpdateBookingStatus)
+	v1.DELETE("/booking/:id", bookingHandler.HandleCancelBooking)
 
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.Port),
