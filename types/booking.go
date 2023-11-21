@@ -6,18 +6,20 @@ import (
 )
 
 type Booking struct {
-	ID       string    `json:"id" bson:"_id,omitempty"`
-	UserID   string    `json:"user_id" bson:"user_id"`
-	RoomID   string    `json:"room_id" bson:"room_id"`
-	FromDate time.Time `json:"from_date" bson:"from_date"`
-	TillDate time.Time `json:"till_date" bson:"till_date"`
+	ID            string        `json:"id" bson:"_id,omitempty"`
+	UserID        string        `json:"user_id" bson:"user_id"`
+	RoomID        string        `json:"room_id" bson:"room_id"`
+	FromDate      time.Time     `json:"from_date" bson:"from_date"`
+	TillDate      time.Time     `json:"till_date" bson:"till_date"`
+	BookingStatus BookingStatus `json:"booking_status" bson:"booking_status"`
 }
 
 type NewBookingParams struct {
-	UserID   string    `json:"user_id" bson:"user_id"`
-	RoomID   string    `json:"room_id" bson:"room_id"`
-	FromDate time.Time `json:"from_date" bson:"from_date"`
-	TillDate time.Time `json:"till_date" bson:"till_date"`
+	UserID        string        `json:"user_id" bson:"user_id"`
+	RoomID        string        `json:"room_id" bson:"room_id"`
+	FromDate      time.Time     `json:"from_date" bson:"from_date"`
+	TillDate      time.Time     `json:"till_date" bson:"till_date"`
+	BookingStatus BookingStatus `json:"booking_status" bson:"booking_status"`
 }
 
 func (params Booking) Validate() error {
@@ -48,17 +50,23 @@ func (params Booking) Validate() error {
 	return nil
 }
 func NewBookingFromParams(params NewBookingParams) *Booking {
+
+	if params.BookingStatus == "" {
+		params.BookingStatus = "Pending"
+	}
+
 	return &Booking{
-		RoomID:   params.RoomID,
-		FromDate: params.FromDate,
-		TillDate: params.TillDate,
+		RoomID:        params.RoomID,
+		FromDate:      params.FromDate,
+		TillDate:      params.TillDate,
+		BookingStatus: params.BookingStatus,
 	}
 }
 
-type BookingStatus int
+type BookingStatus string
 
 const (
-	StatusPending BookingStatus = iota
-	StatusConfirmed
-	StatusCanceled
+	StatusPending   BookingStatus = "Pending"
+	StatusConfirmed BookingStatus = "Confirmed"
+	StatusCanceled  BookingStatus = "Canceled"
 )

@@ -80,9 +80,9 @@ func main() {
 
 	engine.Use(middleware.Logger)
 	engine.Use(gin.Recovery())
-	engine.Use(middleware.AuthMiddleware())
-
 	v1 := engine.Group("/api/v1")
+
+	v1.Use(middleware.AuthMiddleware())
 
 	adminRoutes := engine.Group("/admin", middleware.AdminOnlyMiddleware(hotelManager))
 
@@ -116,8 +116,9 @@ func main() {
 
 	v1.GET("/booking/:id", bookingHandler.HandleGetBooking)
 	v1.GET("/booking", bookingHandler.HandleGetBookings)
-
 	v1.POST("/booking", bookingHandler.HandlePostBooking)
+	// used to change the booking status
+	v1.PATCH("/booking/:id", bookingHandler.HandleUpdateBookingStatus)
 
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.Port),

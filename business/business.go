@@ -68,6 +68,35 @@ func (m *Manager) ListBookings(ctx context.Context) ([]*types.Booking, error) {
 	return bookings, nil
 }
 
+// Add this method to the Manager struct
+func (m *Manager) UpdateBookingStatus(ctx context.Context, bookingID string) error {
+	// Retrieve the booking to check if it exists
+	booking, err := m.BookingStore.GetBookingByID(ctx, bookingID)
+	if err != nil {
+		return err
+	}
+
+	if booking == nil {
+		return errors.New("booking not found")
+	}
+
+	// Check if the booking is already canceled
+	if booking.BookingStatus == types.StatusCanceled {
+		return errors.New("booking is already canceled")
+	}
+
+	// Set the status to canceled
+	booking.BookingStatus = types.StatusCanceled
+
+	// Update the booking in the database
+	err = m.BookingStore.UpdateBookingStatus(ctx, booking)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (m *Manager) AddNewUser(ctx context.Context, params types.UserParams) (string, error) {
 	user, err := types.NewUserFromParams(params)
 	if err != nil {

@@ -82,3 +82,17 @@ func (h *BookingHandler) HandleGetBookings(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, bookings)
 }
+
+func (h *BookingHandler) HandleUpdateBookingStatus(ctx *gin.Context) {
+	id := ctx.Param("id")
+
+	// Assuming you have a method in your business.Manager to cancel a booking
+	err := h.Manager.UpdateBookingStatus(ctx, id)
+
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"message": "Booking canceled successfully"})
+}
