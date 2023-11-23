@@ -74,7 +74,7 @@ func main() {
 
 	// Handlers Initialization
 
-	authHandler := api.NewAuthHandler(userStore, errorLogger)
+	authHandler := api.NewAuthHandler(hotelManager, errorLogger)
 	userHandler := api.NewUserHandler(hotelManager, errorLogger)
 	hotelHandler := api.NewHotelHandler(hotelManager, errorLogger)
 	bookingHandler := api.NewBookingHandler(hotelManager, errorLogger)

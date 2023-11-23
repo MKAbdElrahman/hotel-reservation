@@ -60,3 +60,8 @@ func (m *Manager) GetUserByID(ctx context.Context, ID string) (*types.User, erro
 	}
 	return user, nil
 }
+
+// func (m *Manager) SearchUsers(ctx context.Context, searchQuery string) ([]*types.User, error) {
+
+// 	return nil, nil
+// }

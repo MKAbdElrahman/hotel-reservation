@@ -5,32 +5,24 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/mkabdelrahman/hotel-reservation/auth"
-	"github.com/mkabdelrahman/hotel-reservation/db"
+	"github.com/mkabdelrahman/hotel-reservation/business"
 	"github.com/mkabdelrahman/hotel-reservation/errorlog"
-	"github.com/mkabdelrahman/hotel-reservation/types"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type AuthHandler struct {
-	store                db.UserStore
+	Manager              *business.Manager
 	ErrorResponseHandler *errorlog.HTTPErrorResponseWriterAndLogger
 }
 
-func NewAuthHandler(store db.UserStore, errorLogger *log.Logger) *AuthHandler {
+func NewAuthHandler(Manager *business.Manager, errorLogger *log.Logger) *AuthHandler {
 	return &AuthHandler{
-		store:                store,
+		Manager:              Manager,
 		ErrorResponseHandler: &errorlog.HTTPErrorResponseWriterAndLogger{Logger: errorLogger},
 	}
 }
 
-type AuthParams struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
-
 func (h *AuthHandler) HandleAuthenticate(c *gin.Context) {
-	var authParams AuthParams
+	var authParams business.AuthParams
 
 	if err := c.BindJSON(&authParams); err != nil {
 		appErr := errorlog.BadRequestError(err)
@@ -38,31 +30,10 @@ func (h *AuthHandler) HandleAuthenticate(c *gin.Context) {
 		return
 	}
 
-	user, err := h.store.GetUserByEmail(c, authParams.Email)
-	if err != nil {
-		appErr := errorlog.UnauthorizedError(err)
-		h.ErrorResponseHandler.LogAndHandleError(c.Writer, c.Writer, appErr)
-		return
-	}
-
-	if err := bcrypt.CompareHashAndPassword([]byte(user.EncryptedPassword), []byte(authParams.Password)); err != nil {
-		appErr := errorlog.UnauthorizedError(err)
-		h.ErrorResponseHandler.LogAndHandleError(c.Writer, c.Writer, appErr)
-		return
-	}
-
-	ok, err := types.IsValidPassword(user.EncryptedPassword, authParams.Password)
-
-	if err != nil || !ok {
-		appErr := errorlog.UnauthorizedError(err)
-		h.ErrorResponseHandler.LogAndHandleError(c.Writer, c.Writer, appErr)
-		return
-	}
-
-	token, err := auth.GenerateAuthToken(user.ID.Hex())
+	token, err := h.Manager.GetUserToken(c, authParams)
 
 	if err != nil {
-		appErr := errorlog.InternalServerError(err)
+		appErr := errorlog.UnauthorizedError(err)
 		h.ErrorResponseHandler.LogAndHandleError(c.Writer, c.Writer, appErr)
 		return
 	}
