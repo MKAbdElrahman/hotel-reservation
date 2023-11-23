@@ -12,7 +12,7 @@ tasks:
   seed: go run ./scripts
   build:
     cmds:
-      - go build -o ./bin/api
+      - go build -o ./bin/api ./api 
   run:
     deps: [build]
     cmds:

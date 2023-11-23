@@ -13,7 +13,7 @@ import (
 
 	"github.com/ardanlabs/conf/v3"
 	"github.com/gin-gonic/gin"
-	"github.com/mkabdelrahman/hotel-reservation/api"
+	"github.com/mkabdelrahman/hotel-reservation/api/handlers"
 	"github.com/mkabdelrahman/hotel-reservation/business"
 	"github.com/mkabdelrahman/hotel-reservation/db"
 	"github.com/mkabdelrahman/hotel-reservation/middleware"
@@ -74,10 +74,10 @@ func main() {
 
 	// Handlers Initialization
 
-	authHandler := api.NewAuthHandler(hotelManager, errorLogger)
-	userHandler := api.NewUserHandler(hotelManager, errorLogger)
-	hotelHandler := api.NewHotelHandler(hotelManager, errorLogger)
-	bookingHandler := api.NewBookingHandler(hotelManager, errorLogger)
+	authHandler := handlers.NewAuthHandler(hotelManager, errorLogger)
+	userHandler := handlers.NewUserHandler(hotelManager, errorLogger)
+	hotelHandler := handlers.NewHotelHandler(hotelManager, errorLogger)
+	bookingHandler := handlers.NewBookingHandler(hotelManager, errorLogger)
 
 	// Router
 	engine := gin.New()
