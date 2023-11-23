@@ -6,26 +6,26 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
-	"github.com/mkabdelrahman/hotel-reservation/db"
+	"github.com/mkabdelrahman/hotel-reservation/business"
 	"github.com/mkabdelrahman/hotel-reservation/errorlog"
 	"github.com/mkabdelrahman/hotel-reservation/types"
 )
 
 type UserHandler struct {
-	store                db.UserStore
+	Manager              *business.Manager
 	ErrorResponseHandler *errorlog.HTTPErrorResponseWriterAndLogger
 }
 
-func NewUserHandler(store db.UserStore, errorLogger *log.Logger) *UserHandler {
+func NewUserHandler(m *business.Manager, errorLogger *log.Logger) *UserHandler {
 	return &UserHandler{
-		store:                store,
+		Manager:              m,
 		ErrorResponseHandler: &errorlog.HTTPErrorResponseWriterAndLogger{Logger: errorLogger},
 	}
 }
 
 func (h *UserHandler) HandleGetUser(ctx *gin.Context) {
 	id := ctx.Param("id")
-	user, err := h.store.GetUserByID(ctx, id)
+	user, err := h.Manager.GetUserByID(ctx, id)
 
 	if err != nil {
 		httpError := errorlog.InternalServerError(err)
@@ -52,7 +52,7 @@ func (h *UserHandler) HandleGetUsers(ctx *gin.Context) {
 		return
 	}
 
-	users, err := h.store.GetUsersWithPagination(ctx, filter)
+	users, err := h.Manager.ListUsers(ctx, filter)
 	if err != nil {
 		httpError := errorlog.InternalServerError(err)
 		h.ErrorResponseHandler.LogAndHandleError(os.Stdout, ctx.Writer, httpError)
@@ -73,7 +73,7 @@ func (h *UserHandler) HandleUpdateUser(ctx *gin.Context) {
 
 	userID := ctx.Param("id")
 
-	updatedUser, err := h.store.UpdateUser(ctx, userID, params)
+	updatedUser, err := h.Manager.UpdateUser(ctx, userID, params)
 	if err != nil {
 		httpError := errorlog.InternalServerError(err)
 		h.ErrorResponseHandler.LogAndHandleError(os.Stdout, ctx.Writer, httpError)
@@ -86,7 +86,7 @@ func (h *UserHandler) HandleUpdateUser(ctx *gin.Context) {
 func (h *UserHandler) HandleDeleteUser(ctx *gin.Context) {
 	userID := ctx.Param("id")
 
-	if err := h.store.DeleteUser(ctx, userID); err != nil {
+	if err := h.Manager.DeleteUser(ctx, userID); err != nil {
 		httpError := errorlog.InternalServerError(err)
 		h.ErrorResponseHandler.LogAndHandleError(os.Stdout, ctx.Writer, httpError)
 		return
@@ -114,14 +114,8 @@ func (h *UserHandler) HandlePostUser(ctx *gin.Context) {
 		}
 		return
 	}
-	user, err := types.NewUserFromParams(params)
-	if err != nil {
-		httpError := errorlog.BadRequestError(err)
-		h.ErrorResponseHandler.LogAndHandleError(os.Stdout, ctx.Writer, httpError)
-		return
-	}
 
-	insertedUser, err := h.store.InsertUser(ctx, user)
+	insertedUser, err := h.Manager.AddNewUser(ctx, params)
 	if err != nil {
 		httpError := errorlog.InternalServerError(err)
 		h.ErrorResponseHandler.LogAndHandleError(os.Stdout, ctx.Writer, httpError)

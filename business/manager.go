@@ -1,11 +1,7 @@
 package business
 
 import (
-	"context"
-	"errors"
-
 	"github.com/mkabdelrahman/hotel-reservation/db"
-	"github.com/mkabdelrahman/hotel-reservation/types"
 )
 
 type Manager struct {
@@ -23,24 +19,3 @@ func NewManager(userStore db.UserStore, hotelStore db.HotelStore, roomStore db.R
 		BookingStore: bookingStore,
 	}
 }
-
-
-
-func (m *Manager) AddNewUser(ctx context.Context, params types.UserParams) (string, error) {
-	user, err := types.NewUserFromParams(params)
-	if err != nil {
-		return "", err
-	}
-
-	insertedUser, err := m.UserStore.InsertUser(ctx, user)
-	if err != nil {
-		return "", err
-	}
-
-	if insertedUser == nil {
-		return "", errors.New("insertedUser is nil")
-	}
-
-	return insertedUser.ID.Hex(), nil
-}
-
