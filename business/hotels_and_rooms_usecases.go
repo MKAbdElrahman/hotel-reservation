@@ -6,7 +6,7 @@ import (
 	"github.com/mkabdelrahman/hotel-reservation/types"
 )
 
-func (m *Manager) AddNewHotel(ctx context.Context, params types.HotelParams) (string, error) {
+func (m *Manager) AddNewHotel(ctx context.Context, params types.NewHotelParams) (string, error) {
 
 	hotel := types.NewHotelFromParams(params)
 	insertedHotel, err := m.HotelStore.InsertHotel(ctx, hotel)
@@ -35,7 +35,7 @@ func (m *Manager) QueryHotels(ctx context.Context, criteria types.QueryCriteria)
 	return hotels, nil
 }
 
-func (m *Manager) AddNewRoom(ctx context.Context, params types.RoomParams, hotelID string) (string, error) {
+func (m *Manager) AddNewRoom(ctx context.Context, params types.NewRoomParams, hotelID string) (string, error) {
 
 	room := &types.Room{
 		HotelID:     hotelID,

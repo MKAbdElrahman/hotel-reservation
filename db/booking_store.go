@@ -17,13 +17,15 @@ type BookingStore interface {
 
 	GetBookingByID(ctx context.Context, bookingID string) (*types.Booking, error)
 
+	GetBookingsByUserID(ctx context.Context, userID string) ([]*types.Booking, error)
+
 	GetBookingByRoomAndTimeRange(ctx context.Context, roomID string, fromDate, tillDate time.Time) (*types.Booking, error)
 
 	GetBookings(ctx context.Context) ([]*types.Booking, error)
 
 	UpdateBooking(ctx context.Context, booking *types.Booking) error
 
-	// DeleteBooking(ctx context.Context, bookigID string) error
+	DeleteBookingByID(ctx context.Context, bookigID string) error
 
 	// QueryBooking(ctx context.Context, criteria types.BookingQueryCriteria) ([]*types.Booking, error)
 }
@@ -79,6 +81,34 @@ func (s *MongoBookingStore) GetBookingByID(ctx context.Context, ID string) (*typ
 		return nil, err
 	}
 	return &b, nil
+}
+
+func (s *MongoBookingStore) GetBookingsByUserID(ctx context.Context, userID string) ([]*types.Booking, error) {
+	filter := bson.M{"user_id": userID}
+
+	cursor, err := s.coll.Find(ctx, filter)
+	if err != nil {
+		log.Printf("Error getting bookings by user ID: %v\n", err)
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var bookings []*types.Booking
+	for cursor.Next(ctx) {
+		var booking types.Booking
+		if err := cursor.Decode(&booking); err != nil {
+			log.Printf("Error decoding booking: %v\n", err)
+			return nil, err
+		}
+		bookings = append(bookings, &booking)
+	}
+
+	if err := cursor.Err(); err != nil {
+		log.Printf("Cursor error: %v\n", err)
+		return nil, err
+	}
+
+	return bookings, nil
 }
 
 func (m *MongoBookingStore) GetBookingByRoomAndTimeRange(ctx context.Context, roomID string, fromDate, tillDate time.Time) (*types.Booking, error) {
@@ -154,6 +184,20 @@ func (m *MongoBookingStore) UpdateBooking(ctx context.Context, booking *types.Bo
 
 	if result.ModifiedCount == 0 {
 		return errors.New("no matching booking found for update")
+	}
+
+	return nil
+}
+
+func (s *MongoBookingStore) DeleteBookingByID(ctx context.Context, ID string) error {
+
+	oid, err := primitive.ObjectIDFromHex(ID)
+	if err != nil {
+		return err
+	}
+	_, err = s.coll.DeleteOne(ctx, bson.M{"_id": oid})
+	if err != nil {
+		return err
 	}
 
 	return nil

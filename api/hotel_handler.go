@@ -81,7 +81,7 @@ func (h *HotelHandler) HandleGetHotelRooms(ctx *gin.Context) {
 	var rooms []*types.Room
 
 	for _, roomID := range hotel.Rooms {
-		room, err := h.Manager.RoomStore.GetRoom(ctx, roomID)
+		room, err := h.Manager.RoomStore.GetRoomByID(ctx, roomID)
 		if err != nil {
 			appErr := errorlog.InternalServerError(err)
 			h.ErrorResponseHandler.LogAndHandleError(ctx.Writer, ctx.Writer, appErr)

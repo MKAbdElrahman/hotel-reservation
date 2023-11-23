@@ -13,7 +13,7 @@ import (
 
 type RoomStore interface {
 	InsertRoom(ctx context.Context, room *types.Room) (*types.Room, error)
-	GetRoom(ctx context.Context, roomID string) (*types.Room, error)
+	GetRoomByID(ctx context.Context, roomID string) (*types.Room, error)
 	DeleteRoom(ctx context.Context, roomID string) error
 	UpdateRoom(ctx context.Context, room *types.Room) error
 	GetRoomsByHotelID(ctx context.Context, hotelID string) ([]types.Room, error)
@@ -54,7 +54,7 @@ func (m *MongoRoomStore) InsertRoom(ctx context.Context, room *types.Room) (*typ
 	return room, nil
 }
 
-func (m *MongoRoomStore) GetRoom(ctx context.Context, roomID string) (*types.Room, error) {
+func (m *MongoRoomStore) GetRoomByID(ctx context.Context, roomID string) (*types.Room, error) {
 	oid, err := primitive.ObjectIDFromHex(roomID)
 	if err != nil {
 		return nil, err

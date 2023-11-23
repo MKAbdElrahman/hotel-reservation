@@ -86,7 +86,7 @@ func main() {
 	engine.Use(gin.Recovery())
 	v1 := engine.Group("/api/v1")
 
-	v1.Use(middleware.AuthMiddleware())
+	// v1.Use(middleware.AuthMiddleware())
 
 	adminRoutes := engine.Group("/admin", middleware.AdminOnlyMiddleware(hotelManager))
 
@@ -102,6 +102,7 @@ func main() {
 	// users
 	v1.GET("/user/:id", userHandler.HandleGetUser)
 	v1.DELETE("/user/:id", userHandler.HandleDeleteUser)
+	v1.GET("/user/:id/bookings", userHandler.HandleGetUserBookings)
 
 	v1.GET("/user", userHandler.HandleGetUsers)
 	v1.POST("/user", userHandler.HandlePostUser)

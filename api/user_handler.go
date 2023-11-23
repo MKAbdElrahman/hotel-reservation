@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"log"
 	"net/http"
 	"os"
@@ -34,6 +35,34 @@ func (h *UserHandler) HandleGetUser(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, user)
+}
+
+func (h *UserHandler) HandleGetUserBookings(ctx *gin.Context) {
+	id := ctx.Param("id")
+
+	// Make sure the user exists
+	user, err := h.Manager.GetUserByID(ctx, id)
+	if err != nil {
+		httpError := errorlog.InternalServerError(err)
+		h.ErrorResponseHandler.LogAndHandleError(os.Stdout, ctx.Writer, httpError)
+		return
+	}
+
+	if user == nil {
+		httpError := errorlog.NotFoundError(errors.New("user not found"))
+		h.ErrorResponseHandler.LogAndHandleError(os.Stdout, ctx.Writer, httpError)
+		return
+	}
+
+	// Get the user's bookings
+	bookings, err := h.Manager.ListUserBookings(ctx, id)
+	if err != nil {
+		httpError := errorlog.InternalServerError(err)
+		h.ErrorResponseHandler.LogAndHandleError(os.Stdout, ctx.Writer, httpError)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, bookings)
 }
 
 func (h *UserHandler) HandleGetUsers(ctx *gin.Context) {
@@ -96,7 +125,7 @@ func (h *UserHandler) HandleDeleteUser(ctx *gin.Context) {
 }
 
 func (h *UserHandler) HandlePostUser(ctx *gin.Context) {
-	var params types.UserParams
+	var params types.NewUserParams
 
 	err := ctx.ShouldBindJSON(&params)
 

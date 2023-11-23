@@ -15,7 +15,7 @@ type Room struct {
 	Occupied    bool     `json:"occupied" bson:"occupied"`
 }
 
-type RoomParams struct {
+type NewRoomParams struct {
 	Number      string   `json:"number" bson:"number"`
 	Floor       int      `json:"floor" bson:"floor"`
 	Type        RoomType `json:"type" bson:"type"`
@@ -24,7 +24,7 @@ type RoomParams struct {
 	Occupied    bool     `json:"occupied" bson:"occupied"`
 }
 
-func NewRoomFromParams(params RoomParams) *Room {
+func NewRoomFromParams(params NewRoomParams) *Room {
 	room := &Room{
 		Number:      params.Number,
 		Floor:       params.Floor,

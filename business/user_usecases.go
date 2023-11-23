@@ -2,28 +2,9 @@ package business
 
 import (
 	"context"
-	"errors"
 
 	"github.com/mkabdelrahman/hotel-reservation/types"
 )
-
-func (m *Manager) AddNewUser(ctx context.Context, params types.UserParams) (string, error) {
-	user, err := types.NewUserFromParams(params)
-	if err != nil {
-		return "", err
-	}
-
-	insertedUser, err := m.UserStore.InsertUser(ctx, user)
-	if err != nil {
-		return "", err
-	}
-
-	if insertedUser == nil {
-		return "", errors.New("insertedUser is nil")
-	}
-
-	return insertedUser.ID.Hex(), nil
-}
 
 func (m *Manager) ListUsers(ctx context.Context, filter types.UsersPaginationFilter) ([]*types.User, error) {
 

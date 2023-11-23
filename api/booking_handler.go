@@ -34,29 +34,22 @@ func (h *BookingHandler) HandlePostBooking(ctx *gin.Context) {
 		return
 	}
 
-	booking := types.NewBookingFromParams(params)
-	if err != nil {
-		appErr := errorlog.BadRequestError(err)
-		h.ErrorResponseHandler.LogAndHandleError(ctx.Writer, ctx.Writer, appErr)
-		return
-	}
-
 	userID, exists := ctx.Get("userID")
 	if !exists {
 		appErr := errorlog.InternalServerError(errors.New("userID not found in context"))
 		h.ErrorResponseHandler.LogAndHandleError(ctx.Writer, ctx.Writer, appErr)
 		return
 	}
-	booking.UserID = userID.(string)
+	params.UserID = userID.(string)
 
-	err = booking.Validate()
+	err = params.Validate()
 	if err != nil {
 		appErr := errorlog.BadRequestError(err)
 		h.ErrorResponseHandler.LogAndHandleError(ctx.Writer, ctx.Writer, appErr)
 		return
 	}
 
-	insertedBooking, err := h.Manager.AddNewBooking(ctx, booking)
+	insertedBooking, err := h.Manager.AddNewBooking(ctx, params)
 
 	if err != nil {
 		appErr := errorlog.InternalServerError(err)

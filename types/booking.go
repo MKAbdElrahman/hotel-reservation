@@ -22,7 +22,7 @@ type NewBookingParams struct {
 	BookingStatus BookingStatus `json:"booking_status" bson:"booking_status"`
 }
 
-func (params Booking) Validate() error {
+func (params NewBookingParams) Validate() error {
 	if params.UserID == "" {
 		return errors.New("UserID is required")
 	}
@@ -56,6 +56,7 @@ func NewBookingFromParams(params NewBookingParams) *Booking {
 	}
 
 	return &Booking{
+		UserID:        params.UserID,
 		RoomID:        params.RoomID,
 		FromDate:      params.FromDate,
 		TillDate:      params.TillDate,

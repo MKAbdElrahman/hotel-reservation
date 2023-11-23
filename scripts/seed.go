@@ -77,7 +77,7 @@ func main() {
 
 	Init(ctx)
 
-	users := []types.UserParams{
+	users := []types.NewUserParams{
 		{FirstName: "mohamed", LastName: "Kamal", Email: "mohamed@example.com", Password: "password1"},
 		{FirstName: "Ali", LastName: "Ibrahim", Email: "ali@example.com", Password: "password2"},
 	}
@@ -91,7 +91,7 @@ func main() {
 
 func seedHotel(ctx context.Context, name string, location string, rating types.Rating) {
 
-	hotelID, err := manager.AddNewHotel(ctx, types.HotelParams{
+	hotelID, err := manager.AddNewHotel(ctx, types.NewHotelParams{
 		Name:     name,
 		Location: location,
 		Rating:   rating,
@@ -101,7 +101,7 @@ func seedHotel(ctx context.Context, name string, location string, rating types.R
 		log.Fatal(err)
 	}
 
-	rooms := []types.RoomParams{
+	rooms := []types.NewRoomParams{
 		{
 			Number:      "101",
 			Floor:       1,
@@ -144,7 +144,7 @@ func seedHotel(ctx context.Context, name string, location string, rating types.R
 	}
 }
 
-func seedUsers(ctx context.Context, users []types.UserParams) {
+func seedUsers(ctx context.Context, users []types.NewUserParams) {
 	for _, userParams := range users {
 		userID, err := manager.AddNewUser(ctx, userParams)
 		if err != nil {

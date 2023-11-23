@@ -26,14 +26,14 @@ type User struct {
 	IsAdmin           bool               `bson:"isAdmin" json:"isAdmin"`
 }
 
-type UserParams struct {
+type NewUserParams struct {
 	FirstName string `json:"firstName"`
 	LastName  string `json:"lastName"`
 	Email     string `json:"email"`
 	Password  string `json:"password"`
 }
 
-func NewUserFromParams(params UserParams) (*User, error) {
+func NewUserFromParams(params NewUserParams) (*User, error) {
 	encryptedPassword, err := bcrypt.GenerateFromPassword([]byte(params.Password), bcryptCost)
 	if err != nil {
 		return nil, err
@@ -75,7 +75,7 @@ func (params UpdateUserParams) Validate() []error {
 	}
 	return errors
 }
-func (params UserParams) Validate() []error {
+func (params NewUserParams) Validate() []error {
 	var errors []error
 
 	if len(params.FirstName) < minFirstNameLength {

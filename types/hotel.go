@@ -8,13 +8,13 @@ type Hotel struct {
 	Rating   Rating   `json:"rating" bson:"rating"`
 }
 
-type HotelParams struct {
+type NewHotelParams struct {
 	Name     string `json:"name" bson:"name"`
 	Location string `json:"location" bson:"location"`
 	Rating   Rating `json:"rating" bson:"rating"`
 }
 
-func NewHotelFromParams(params HotelParams) *Hotel {
+func NewHotelFromParams(params NewHotelParams) *Hotel {
 	hotel := &Hotel{
 		Name:     params.Name,
 		Location: params.Location,
