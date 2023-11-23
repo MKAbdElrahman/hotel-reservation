@@ -8,6 +8,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type Dropper interface {
@@ -21,6 +22,8 @@ type UserStore interface {
 	GetUserByEmail(ctx context.Context, email string) (*types.User, error)
 
 	GetUsers(context.Context) ([]*types.User, error)
+
+	GetUsersWithPagination(ctx context.Context, filter types.UsersPaginationFilter) ([]*types.User, error)
 
 	InsertUser(ctx context.Context, user *types.User) (*types.User, error)
 
@@ -121,14 +124,13 @@ func (s *MongoUserStore) InsertUser(ctx context.Context, user *types.User) (*typ
 	return user, nil
 }
 
-// UpdateUser method in UserStore interface
 func (s *MongoUserStore) UpdateUser(ctx context.Context, ID string, updateFields types.UpdateUserParams) (*types.User, error) {
 	oid, err := primitive.ObjectIDFromHex(ID)
 	if err != nil {
 		return nil, err
 	}
 
-	filter := bson.M{"_id": oid} // Assuming ID is the MongoDB document ID field
+	filter := bson.M{"_id": oid}
 
 	update := bson.M{"$set": updateFields.BSON()}
 
@@ -143,4 +145,37 @@ func (s *MongoUserStore) UpdateUser(ctx context.Context, ID string, updateFields
 	}
 
 	return updatedUser, nil
+}
+
+// GetUsersWithPagination retrieves users from the store with pagination using the provided filter.
+func (s *MongoUserStore) GetUsersWithPagination(ctx context.Context, filter types.UsersPaginationFilter) ([]*types.User, error) {
+	if err := filter.Validate(); err != nil {
+		return nil, err
+	}
+
+	offset := (filter.Page - 1) * filter.PageSize
+
+	options := options.Find().SetSkip(int64(offset)).SetLimit(int64(filter.PageSize))
+
+	// Apply sorting options
+	if filter.SortBy != "" {
+		sortDir := 1
+		if filter.SortDir == types.DescSort {
+			sortDir = -1
+		}
+
+		options.SetSort(bson.D{{Key: filter.SortBy, Value: sortDir}})
+	}
+
+	cur, err := s.coll.Find(ctx, bson.M{}, options)
+	if err != nil {
+		return nil, err
+	}
+
+	var users []*types.User
+	if err := cur.All(ctx, &users); err != nil {
+		return nil, err
+	}
+
+	return users, nil
 }

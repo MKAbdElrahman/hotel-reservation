@@ -38,12 +38,27 @@ func (h *UserHandler) HandleGetUser(ctx *gin.Context) {
 
 func (h *UserHandler) HandleGetUsers(ctx *gin.Context) {
 
-	users, err := h.store.GetUsers(ctx)
+	filter := types.NewUsersPaginationFilter()
+
+	if err := ctx.ShouldBindQuery(&filter); err != nil {
+		httpError := errorlog.BadRequestError(err)
+		h.ErrorResponseHandler.LogAndHandleError(os.Stdout, ctx.Writer, httpError)
+		return
+	}
+
+	if err := filter.Validate(); err != nil {
+		httpError := errorlog.BadRequestError(err)
+		h.ErrorResponseHandler.LogAndHandleError(os.Stdout, ctx.Writer, httpError)
+		return
+	}
+
+	users, err := h.store.GetUsersWithPagination(ctx, filter)
 	if err != nil {
 		httpError := errorlog.InternalServerError(err)
 		h.ErrorResponseHandler.LogAndHandleError(os.Stdout, ctx.Writer, httpError)
 		return
 	}
+
 	ctx.JSON(http.StatusOK, users)
 }
 
