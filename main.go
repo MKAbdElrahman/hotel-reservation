@@ -17,6 +17,8 @@ import (
 	"github.com/mkabdelrahman/hotel-reservation/business"
 	"github.com/mkabdelrahman/hotel-reservation/db"
 	"github.com/mkabdelrahman/hotel-reservation/middleware"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/pkgerrors"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -68,12 +70,18 @@ func main() {
 
 	hotelManager := business.NewManager(userStore, hotelStore, roomStore, bookingStore)
 
+	// logger
+
+	zerolog.ErrorStackMarshaler = pkgerrors.MarshalStack
+
+	errorLogger := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
+
 	// Handlers Initialization
 
-	authHandler := api.NewAuthHandler(userStore)
-	userHandler := api.NewUserHandler(userStore)
-	hotelHandler := api.NewHotelHandler(hotelManager)
-	bookingHandler := api.NewBookingHandler(hotelManager)
+	authHandler := api.NewAuthHandler(userStore, errorLogger)
+	userHandler := api.NewUserHandler(userStore, errorLogger)
+	hotelHandler := api.NewHotelHandler(hotelManager, errorLogger)
+	bookingHandler := api.NewBookingHandler(hotelManager, errorLogger)
 
 	// Router
 	engine := gin.New()

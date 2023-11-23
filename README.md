@@ -30,6 +30,21 @@ This backend system is designed to manage hotel reservations through a clean and
   - Resource handlers should refrain from making direct calls to the database. All database interactions should be routed through the manager.
 
 
+## Guidlines 
+### Logging: REF [Design Philosophy On Logging]((https://www.ardanlabs.com/blog/2017/05/design-philosophy-on-logging.html))
+
+- Logging should be isolated to the single purpose of debugging errors.
+- Logging and error handling are coupled and not separate concerns. 
+- Handling an error means:
+  - The error has been logged.
+  - The application is back to 100% integrity.
+  - The current error is not reported any longer.
+- Packages that are reusable across many projects only return root error values.
+- If the error is not going to be handled, wrap and return up the call stack.
+- Once an error is handled, it is not allowed to be passed up the call stack any longer.
+
+
+
 ## Getting Started
 
 Please look at the `Taskfile.yaml` in the root directoty. The project is entirlt managed using task.

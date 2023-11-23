@@ -1,20 +1,24 @@
 package api
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/mkabdelrahman/hotel-reservation/business"
+	"github.com/mkabdelrahman/hotel-reservation/errorlog"
 	"github.com/mkabdelrahman/hotel-reservation/types"
 )
 
 type HotelHandler struct {
-	Manager *business.Manager
+	Manager              *business.Manager
+	ErrorResponseHandler *errorlog.HTTPErrorResponseWriterAndLogger
 }
 
-func NewHotelHandler(m *business.Manager) *HotelHandler {
+func NewHotelHandler(m *business.Manager, errorLogger *log.Logger) *HotelHandler {
 	return &HotelHandler{
-		Manager: m,
+		Manager:              m,
+		ErrorResponseHandler: &errorlog.HTTPErrorResponseWriterAndLogger{Logger: errorLogger},
 	}
 }
 
@@ -22,7 +26,8 @@ func (h *HotelHandler) HandleGetHotels(ctx *gin.Context) {
 	hotels, err := h.Manager.ListHotels(ctx)
 
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		appErr := errorlog.InternalServerError(err)
+		h.ErrorResponseHandler.LogAndHandleError(ctx.Writer, ctx.Writer, appErr)
 		return
 	}
 
@@ -30,13 +35,13 @@ func (h *HotelHandler) HandleGetHotels(ctx *gin.Context) {
 }
 
 func (h *HotelHandler) HandleGetHotel(ctx *gin.Context) {
-
 	id := ctx.Param("id")
 
 	hotel, err := h.Manager.HotelStore.GetHotel(ctx, id)
 
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		appErr := errorlog.InternalServerError(err)
+		h.ErrorResponseHandler.LogAndHandleError(ctx.Writer, ctx.Writer, appErr)
 		return
 	}
 
@@ -47,28 +52,29 @@ func (h *HotelHandler) HandleHotelSearch(ctx *gin.Context) {
 	var q types.QueryCriteria
 
 	if err := ctx.ShouldBindQuery(&q); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		appErr := errorlog.BadRequestError(err)
+		h.ErrorResponseHandler.LogAndHandleError(ctx.Writer, ctx.Writer, appErr)
 		return
 	}
 
 	hotels, err := h.Manager.QueryHotels(ctx, q)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		appErr := errorlog.InternalServerError(err)
+		h.ErrorResponseHandler.LogAndHandleError(ctx.Writer, ctx.Writer, appErr)
 		return
 	}
 
-	// Example response
 	ctx.JSON(http.StatusOK, hotels)
 }
 
 func (h *HotelHandler) HandleGetHotelRooms(ctx *gin.Context) {
-
 	id := ctx.Param("id")
 
 	hotel, err := h.Manager.HotelStore.GetHotel(ctx, id)
 
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		appErr := errorlog.InternalServerError(err)
+		h.ErrorResponseHandler.LogAndHandleError(ctx.Writer, ctx.Writer, appErr)
 		return
 	}
 
@@ -77,13 +83,12 @@ func (h *HotelHandler) HandleGetHotelRooms(ctx *gin.Context) {
 	for _, roomID := range hotel.Rooms {
 		room, err := h.Manager.RoomStore.GetRoom(ctx, roomID)
 		if err != nil {
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			appErr := errorlog.InternalServerError(err)
+			h.ErrorResponseHandler.LogAndHandleError(ctx.Writer, ctx.Writer, appErr)
 			return
 		}
 
 		rooms = append(rooms, room)
-
 	}
 	ctx.JSON(http.StatusOK, rooms)
-
 }
