@@ -12,11 +12,6 @@ import (
 	"time"
 
 	"github.com/ardanlabs/conf/v3"
-	"github.com/gin-gonic/gin"
-	"github.com/mkabdelrahman/hotel-reservation/api/handlers"
-	"github.com/mkabdelrahman/hotel-reservation/business"
-	"github.com/mkabdelrahman/hotel-reservation/db"
-	"github.com/mkabdelrahman/hotel-reservation/middleware"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -29,17 +24,18 @@ const (
 	bookingColl = "bookings"
 )
 
-type Config struct {
+const serverShutdownTimeout = 5 * time.Second
+
+type config struct {
 	MONGODB_URI string `conf:"default:mongodb://localhost:27017,flag:dburi,env:DB_URI"`
 	Port        int    `conf:"default:8080,env:PORT"`
 }
 
-const serverShutdownTimeout = 5 * time.Second
-
 func main() {
 
-	// CONFIG
-	var cfg Config
+	// CONFIGS
+
+	var cfg config
 	help, err := conf.Parse("", &cfg)
 	if err != nil {
 		if errors.Is(err, conf.ErrHelpWanted) {
@@ -47,92 +43,32 @@ func main() {
 			return
 		}
 		log.Fatalf("Error parsing configuration: %v\n", err)
-		return
 	}
 
-	// Mongodb
-
-	// fmt.Println(cfg.MONGODB_URI)
-
-	ctx := context.Background()
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(cfg.MONGODB_URI))
-
+	// DATABASE
+	client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(cfg.MONGODB_URI))
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	userStore := db.NewMongoUserStore(client, dbName, userColl)
-	hotelStore := db.NewMongoHotelStore(client, dbName, hotelColl)
-	roomStore := db.NewMongoRoomStore(client, dbName, roomColl)
-	bookingStore := db.NewMongoBookingStore(client, dbName, bookingColl)
-
-	hotelManager := business.NewManager(userStore, hotelStore, roomStore, bookingStore)
-
-	// logger
-
-	errorLogger := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
-
-	// Handlers Initialization
-
-	authHandler := handlers.NewAuthHandler(hotelManager, errorLogger)
-	userHandler := handlers.NewUserHandler(hotelManager, errorLogger)
-	hotelHandler := handlers.NewHotelHandler(hotelManager, errorLogger)
-	bookingHandler := handlers.NewBookingHandler(hotelManager, errorLogger)
-
-	// Router
-	engine := gin.New()
-
-	engine.Use(middleware.Logger)
-	engine.Use(gin.Recovery())
-	v1 := engine.Group("/api/v1")
-
-	// v1.Use(middleware.AuthMiddleware())
-
-	adminRoutes := engine.Group("/admin", middleware.AdminOnlyMiddleware(hotelManager))
-
-	{
-		adminRoutes.GET("/dashboard", func(c *gin.Context) {
-			// Your admin-only route logic goes here
-			c.JSON(200, gin.H{"message": "Admin dashboard"})
-		})
-	}
-
-	engine.POST("/api/auth", authHandler.HandleAuthenticate)
-
-	// users
-	v1.GET("/user/:id", userHandler.HandleGetUser)
-	v1.DELETE("/user/:id", userHandler.HandleDeleteUser)
-	v1.GET("/user/:id/bookings", userHandler.HandleGetUserBookings)
-
-	v1.GET("/user", userHandler.HandleGetUsers)
-	v1.POST("/user", userHandler.HandlePostUser)
-	v1.PUT("/user/:id", userHandler.HandleUpdateUser)
-
-	// hotel
-	v1.GET("/hotel", hotelHandler.HandleGetHotels)
-
-	v1.GET("/hotel/:id", hotelHandler.HandleGetHotel)
-
-	v1.GET("/hotel/:id/rooms", hotelHandler.HandleGetHotelRooms)
-
-	v1.GET("/hotel/search", hotelHandler.HandleHotelSearch)
-
-	// booking
-
-	v1.GET("/booking/:id", bookingHandler.HandleGetBooking)
-	v1.GET("/booking", bookingHandler.HandleGetBookings)
-	v1.POST("/booking", bookingHandler.HandlePostBooking)
-	// used to change the booking status
-	v1.DELETE("/booking/:id", bookingHandler.HandleCancelBooking)
-
+	// SERVER
+	engine := setupRouter(client)
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.Port),
 		Handler: engine,
 	}
 
+	err = run(cfg, client, server)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func run(cfg config, client *mongo.Client, server *http.Server) error {
+
 	chanErrors := make(chan error)
 	go func() {
-		chanErrors <- runServer(server)
+		chanErrors <- server.ListenAndServe()
 	}()
 
 	chanSignals := make(chan os.Signal, 1)
@@ -141,22 +77,16 @@ func main() {
 	select {
 	case err := <-chanErrors:
 		log.Fatalf("Error while starting server %s", err)
+		return err
 	case s := <-chanSignals:
 		log.Printf("Shutting down server in few seconds due to %s", s)
 		ctx, cancel := context.WithTimeout(context.Background(), serverShutdownTimeout)
 		defer cancel()
-		if err := Close(ctx, server); err != nil {
+		if err := server.Shutdown(ctx); err != nil {
 			log.Fatal("Server forced to shutdown: ", err)
+			return err
 		}
 		log.Print("Server exiting gracefully")
 	}
-
-}
-
-func runServer(server *http.Server) error {
-	return server.ListenAndServe()
-}
-
-func Close(ctx context.Context, server *http.Server) error {
-	return server.Shutdown(ctx)
+	return nil
 }
